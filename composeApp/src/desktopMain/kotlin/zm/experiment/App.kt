@@ -1,5 +1,6 @@
 package zm.experiment
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -14,43 +15,39 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.outlined.Settings
+import zm.experiment.model.type.SidePanelType
+import zm.experiment.view.Plotter
+import zm.experiment.view.theme.AppTheme
+import zm.experiment.viewmodel.AppViewModel
+import zm.experiment.viewmodel.PlotViewModel
 
 
 @Composable
 @Preview
-fun App(view: PlotViewModel = PlotViewModel()) {
+fun App(plot: PlotViewModel = PlotViewModel(), view: AppViewModel = AppViewModel(plot)) {
 
-    MaterialTheme {
+    AppTheme {
         var showContent by remember { mutableStateOf(false) }
         Box(modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colors.background)//Color.White)
         )
         Row(modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
         ) {
             Sidebar(view)
-            when (view.currentPanel) {
-                SidePanelType.SETTINGS -> Sidepanel(view)
-                SidePanelType.PROPERTIES -> {}//SidePanel("Properties", onClose = { viewModel.hidePanel() })
-                SidePanelType.MARKERS -> {}//SidePanel("Markers", onClose = { viewModel.hidePanel() })
-                SidePanelType.HELP -> {}//SidePanel("Help", onClose = { viewModel.hidePanel() })
-                SidePanelType.NONE -> {} // No panel visible
+            AnimatedVisibility(view.sidepanelVisible()) {
+                when (view.currentPanel) {
+                    SidePanelType.SETTINGS -> Sidepanel(view)
+                    SidePanelType.PROPERTIES -> {}//SidePanel("Properties", onClose = { viewModel.hidePanel() })
+                    SidePanelType.MARKERS -> {}//SidePanel("Markers", onClose = { viewModel.hidePanel() })
+                    SidePanelType.HELP -> {}//SidePanel("Help", onClose = { viewModel.hidePanel() })
+                    SidePanelType.NONE -> {} // No panel visible
+                }
             }
+            Plotter(plot)
         }
-//        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-//            Button(onClick = { showContent = !showContent }) {
-//                Text("Click me!")
-//            }
-//            AnimatedVisibility(showContent) {
-//                val greeting = remember { Greeting().greet() }
-//                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-//                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-//                    Text("Compose: $greeting")
-//                }
-//            }
-//        }
     }
 }
 
@@ -66,8 +63,8 @@ fun Chart() {
 
 @Composable
 @Preview
-fun Sidepanel(view: PlotViewModel) {
-    MaterialTheme {
+fun Sidepanel(view: AppViewModel) {
+    AppTheme {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
@@ -100,8 +97,10 @@ fun Sidepanel(view: PlotViewModel) {
             Spacer(modifier = Modifier.height(5.dp))
             Text(text = "Serial Port", fontSize = 12.sp, color = Color.Blue)
             view.availablePorts.forEachIndexed { index, value ->
-                //if (!value.startsWith("cu")) {
-                    val current = value == view.port.name
+                if (!value.startsWith("tty")) {
+                    val current = value == view.primaryPort.name
+                    var name = view.primaryPort.name
+                    if (name.contains("cu.")) name = name.split(".")[1]
                     val fill = if (current) Color(175, 238, 238) else Color.White
 
                     Spacer(modifier = Modifier.height(5.dp))
@@ -126,21 +125,28 @@ fun Sidepanel(view: PlotViewModel) {
                         )
                     }
 
-                //}
+                }
             }
-            Spacer(modifier = Modifier.height(5.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             OutlinedButton(
                 onClick = { view.setupSerial() },
                 modifier = Modifier
                     .width(120.dp)
                     .height(30.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    if (view.port.connected) Color(34, 139, 34) else Color.White,
-                    Color.Black
-                )
+                colors = if (view.primaryPort.connected) {
+                    ButtonDefaults.outlinedButtonColors(
+                        if (view.primaryPort.connected) Color(34, 139, 34) else Color.White,
+                        Color.White
+                    )
+                } else {
+                    ButtonDefaults.outlinedButtonColors(
+                        Color.White,
+                        Color.Black,
+                    )
+                }
             ) {
                 Text(
-                    text = if (view.port.connected) "Connect" else "Disconnect",
+                    text = if (view.primaryPort.connected) "Disconnect" else "Connect",
                     fontSize = 10.sp,
                     modifier = Modifier.padding(0.dp)
                 )
@@ -173,7 +179,7 @@ fun Sidepanel(view: PlotViewModel) {
 }
 
 @Composable
-fun Sidebar(view: PlotViewModel) {
+fun Sidebar(view: AppViewModel) {
     Column(
         modifier = Modifier
             .fillMaxHeight()
