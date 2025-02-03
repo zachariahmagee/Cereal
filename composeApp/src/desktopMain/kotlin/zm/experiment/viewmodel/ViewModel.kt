@@ -22,6 +22,7 @@ import zm.experiment.model.type.SidePanelType
 
 class AppViewModel(
     private val plotViewModel: PlotViewModel,
+    private val serialViewModel: SerialMonitorViewModel,
     //private val eventBus: EventBus = EventBus
 ) : ViewModel() {
     var currentPanel by mutableStateOf(SidePanelType.NONE)
@@ -29,6 +30,9 @@ class AppViewModel(
     var primaryPort by mutableStateOf<Port>(Port(name = "", id = 0))
         private set
     var currentAlert by mutableStateOf(AlertType.NONE)
+        private set
+
+    var showSerialMonitor by mutableStateOf<Boolean>(false)
         private set
 
     private val _availablePorts = mutableStateListOf<String>()
@@ -61,6 +65,10 @@ class AppViewModel(
 
     fun hidePanel() {
         currentPanel = SidePanelType.NONE
+    }
+
+    fun serialMonitorVisibility(show: Boolean) {
+        showSerialMonitor = show
     }
 
     fun sidepanelVisible() : Boolean { return currentPanel != SidePanelType.NONE }
@@ -145,7 +153,7 @@ class AppViewModel(
 
                         val re = "?\n"
                         port.port?.writeBytes(re.toByteArray(), re.toByteArray().size)
-                        port.listener = MessageListener(parser, port.lineEnding.toString().toByteArray())
+                        port.listener = MessageListener(parser, serialViewModel, port.lineEnding.toString().toByteArray())
                         port.port?.addDataListener(port.listener)
                         port.connected = true
 

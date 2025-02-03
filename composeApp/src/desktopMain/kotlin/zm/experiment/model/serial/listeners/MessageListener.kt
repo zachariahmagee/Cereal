@@ -3,11 +3,13 @@ package zm.experiment.model.serial.listeners
 import com.fazecast.jSerialComm.SerialPort
 import com.fazecast.jSerialComm.SerialPortEvent
 import com.fazecast.jSerialComm.SerialPortMessageListener
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.*
 import zm.experiment.model.serial.Parser
+import zm.experiment.viewmodel.SerialMonitorViewModel
 
 class MessageListener(
     private val parser: Parser,
+    private val serial: SerialMonitorViewModel,
     private val lineEnding: ByteArray = "\n".toByteArray(),
 ) : SerialPortMessageListener {
 
@@ -18,6 +20,7 @@ class MessageListener(
     private var incomingBytes: Int = 0
     private var bytesps: Int = 0
 
+    private val messageScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     override fun getListeningEvents(): Int {
         return SerialPort.LISTENING_EVENT_DATA_RECEIVED
     }
@@ -31,7 +34,7 @@ class MessageListener(
     }
 
     override fun serialEvent(event: SerialPortEvent) {
-        synchronized(this) {
+        //synchronized(this) {
             if (currbps == 0L) currbps = System.currentTimeMillis()
             val delimitedMessage = event.receivedData
             bytesperframe += delimitedMessage.size
@@ -46,7 +49,10 @@ class MessageListener(
                 currbps = System.currentTimeMillis()
             }
 
-            parser.parse(s)
-        }
+            //messageScope.launch {
+                serial.addSerialData(s)
+                parser.parse(s)
+            //}
+        //}
     }
 }

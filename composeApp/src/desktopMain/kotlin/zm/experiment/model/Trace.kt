@@ -9,6 +9,11 @@ class Trace(
 
     private var head = -1
     private var tail = 0
+    private var endOfLastPacket = 0
+    private var count = 0
+
+    val sizeSinceLastPacket: Int
+        get() = if (head == -1) 0 else (head - endOfLastPacket).coerceAtMost(window)
 
     val size: Int
         get() = if (head == -1) 0 else (head - tail + 1).coerceAtMost(window)
@@ -17,6 +22,11 @@ class Trace(
         head = (head + 1) % capacity
         values1[head] = value
         values2[head] = secondValue
+        count++
+        if (count >= window) {
+            endOfLastPacket = head
+            count = 0
+        }
         if (head - tail >= window) {
             tail = (tail + 1) % capacity
         }
@@ -26,6 +36,8 @@ class Trace(
     operator fun get(index: Int): Pair<Double, Double?>? {
         if (index < 0 || index >= size) return null
         val realIndex = (tail + index) % capacity
+//        var realIndex = (head - window + index)
+//        if (realIndex < 0) realIndex += capacity
         return values1[realIndex] to values2[realIndex] // to values2[realIndex] == null
     }
 
@@ -47,6 +59,19 @@ class Trace(
             } else null
         }
     }
+
+    fun reset() {
+        tail = head
+    }
+
+    fun clear() {
+        tail = 0
+        head = -1
+    }
+
+    val isNotEmpty: Boolean
+        get() = size > 0
+
 
     override fun toString(): String {
         return getWindowValue().joinToString(", ")

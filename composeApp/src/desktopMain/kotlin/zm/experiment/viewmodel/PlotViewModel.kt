@@ -38,7 +38,13 @@ class PlotViewModel : ViewModel() {
     private val _drawableTraces = mutableStateListOf<List<Double>>()
     val drawableTraces get() = _drawableTraces
 
+    var pointsDrawn: Int by mutableStateOf(0)
     var serialConnected: Boolean by mutableStateOf(false)
+        private set
+
+    var plottingMode: PlottingMode by mutableStateOf(PlottingMode.SCROLLING)
+        private set
+    var drawNewData: Boolean by mutableStateOf(false)
         private set
 
     val packetSize: Int = 500
@@ -51,6 +57,8 @@ class PlotViewModel : ViewModel() {
                 when (event) {
                     AppEvent.PanelChanged -> TODO()
                     is AppEvent.PortConnected -> {
+                        _traces.clear()
+                        pointsDrawn = 0
                         serialConnected = true
                         println("PlotViewModel: Port ${event.port.name} connected")
 
@@ -73,8 +81,21 @@ class PlotViewModel : ViewModel() {
     fun addData(index: Int, yValue: Double, xValue: Double? = null, label: String = "") {
         if (_traces.size <= index) _traces.add(Trace(packetSize))
         _traces[index].add(yValue, xValue)
+        //println("current size: ${_traces[index].sizeSinceLastPacket}")
+        when (plottingMode) {
+            PlottingMode.SCROLLING -> drawNewData = true
+            PlottingMode.FRAMES -> {
+                if (_traces[index].sizeSinceLastPacket >= packetSize) {
+                    drawNewData = true
+                }
+            }
+        }
         //println("$label: $value")
         redrawTrigger++
+    }
+
+    fun newDataDrawn() {
+        drawNewData = false
     }
 
     private fun refreshDrawableTraces() {

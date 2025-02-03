@@ -15,16 +15,19 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.ShoppingCart
 import zm.experiment.model.type.SidePanelType
 import zm.experiment.view.Plotter
 import zm.experiment.view.theme.AppTheme
+import zm.experiment.view.window.SerialMonitorWindow
 import zm.experiment.viewmodel.AppViewModel
 import zm.experiment.viewmodel.PlotViewModel
+import zm.experiment.viewmodel.SerialMonitorViewModel
 
 
 @Composable
 @Preview
-fun App(plot: PlotViewModel = PlotViewModel(), view: AppViewModel = AppViewModel(plot)) {
+fun App(plot: PlotViewModel = PlotViewModel(), serial: SerialMonitorViewModel = SerialMonitorViewModel(), view: AppViewModel = AppViewModel(plot, serial)) {
 
     AppTheme {
         var showContent by remember { mutableStateOf(false) }
@@ -47,6 +50,13 @@ fun App(plot: PlotViewModel = PlotViewModel(), view: AppViewModel = AppViewModel
                 }
             }
             Plotter(plot)
+        }
+
+        if (view.showSerialMonitor) {
+            SerialMonitorWindow(
+                serial = serial,
+                onCloseRequest = { view.serialMonitorVisibility(false) }
+            )
         }
     }
 }
@@ -200,6 +210,7 @@ fun Sidebar(view: AppViewModel) {
             IconItem(Icons.Outlined.Settings, onClick = { view.showPanel(SidePanelType.SETTINGS) })
         }
         Spacer(modifier = Modifier.height(16.dp)) // Space between icons
+        IconItem(Icons.Outlined.ShoppingCart, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor)})
 //        IconItem("icon2.png")
 //        Spacer(modifier = Modifier.height(16.dp))
 //        IconItem("icon3.png")

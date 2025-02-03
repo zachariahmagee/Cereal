@@ -22,6 +22,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation("com.fazecast:jSerialComm:2.11.0")
+            //implementation("org.jetbrains.skiko:skiko:0.8.19")
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
