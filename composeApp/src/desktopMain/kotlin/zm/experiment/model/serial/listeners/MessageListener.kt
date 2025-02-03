@@ -50,7 +50,7 @@ class MessageListener(
             }
 
             //messageScope.launch {
-                serial.addSerialData(s)
+                //serial.addSerialData(s)
                 parser.parse(s)
             //}
         //}

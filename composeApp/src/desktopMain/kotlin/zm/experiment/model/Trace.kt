@@ -30,6 +30,7 @@ class Trace(
         if (head - tail >= window) {
             tail = (tail + 1) % capacity
         }
+        if (head >= capacity - 1) println("Reached Capacity")
         //println("$tail, $head, $size")
     }
 
@@ -82,3 +83,43 @@ class Trace(
 fun List<Trace>.min() : Double = this.minOfOrNull { it.min() ?: Double.MAX_VALUE } ?: 0.0
 
 fun List<Trace>.max() : Double = this.maxOfOrNull { it.max() ?: Double.MIN_VALUE } ?: 1.0
+
+
+class Trace1 (
+    private val windowSize: Int = 1000,
+    private val isPair: Boolean = false
+) {
+    private val values1 = ArrayDeque<Double>(windowSize) // Primary values
+    private val values2 = if (isPair) ArrayDeque<Double>(windowSize) else null // Optional secondary values
+
+    val size: Int
+        get() = values1.size
+
+    fun add(value: Double, secondValue: Double? = null) {
+        if (values1.size >= windowSize) {
+            values1.removeFirst() // Remove oldest element
+            values2?.removeFirst()
+        }
+        values1.addLast(value)
+        secondValue?.let { values2?.addLast(it) }
+    }
+
+    // Override indexing operator []
+    operator fun get(index: Int): Pair<Double, Double?>? {
+        if (index < 0 || index >= size) return null
+        return values1[index] to values2?.get(index)
+    }
+
+    fun getWindow(): List<Pair<Double, Double?>> = values1.mapIndexed { i, v -> v to values2?.getOrNull(i) }
+
+    fun min(): Double? = values1.minOrNull()
+    fun max(): Double? = values1.maxOrNull()
+
+    fun peaks(threshold: Double): List<Pair<Int, Double>>  {
+        return values1.mapIndexedNotNull { i, v ->
+            if (i > 0 && i < size - 1 && v > values1[i - 1] && v > values1[i + 1] && v > threshold) {
+                i to v
+            } else null
+        }
+    }
+}

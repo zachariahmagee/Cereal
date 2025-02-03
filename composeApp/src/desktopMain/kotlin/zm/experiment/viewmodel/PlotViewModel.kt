@@ -8,9 +8,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import zm.experiment.model.Ticks
 import zm.experiment.model.Trace
 import zm.experiment.model.event.AppEvent
 import zm.experiment.model.event.EventBus
+import zm.experiment.model.max
+import zm.experiment.model.min
 
 enum class PlottingMode {
     SCROLLING,
@@ -46,6 +49,8 @@ class PlotViewModel : ViewModel() {
         private set
     var drawNewData: Boolean by mutableStateOf(false)
         private set
+
+    var ticks: Ticks by mutableStateOf(Ticks(0.0, 500.0, 5))
 
     val packetSize: Int = 500
     val MIN_DELTA = 10.0
@@ -83,10 +88,14 @@ class PlotViewModel : ViewModel() {
         _traces[index].add(yValue, xValue)
         //println("current size: ${_traces[index].sizeSinceLastPacket}")
         when (plottingMode) {
-            PlottingMode.SCROLLING -> drawNewData = true
+            PlottingMode.SCROLLING -> {
+                drawNewData = true
+                ticks(_traces.min(), _traces.max(), 5)
+            }
             PlottingMode.FRAMES -> {
                 if (_traces[index].sizeSinceLastPacket >= packetSize) {
                     drawNewData = true
+                    ticks(_traces.min(), _traces.max(), 5)
                 }
             }
         }
@@ -98,6 +107,9 @@ class PlotViewModel : ViewModel() {
         drawNewData = false
     }
 
+    fun ticks(min: Double, max: Double, tickCount: Int = 5) {
+        ticks = Ticks(min, max, tickCount)
+    }
     private fun refreshDrawableTraces() {
        viewModelScope.launch(Dispatchers.IO) {
            while (true) {
