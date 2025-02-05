@@ -1,6 +1,95 @@
 package zm.experiment.model
 
 class Trace(
+    var windowSize: Int = 500,
+    private val capacity: Int = 10000
+) {
+    private val values1 = DoubleArray(capacity)
+    private val values2 = Array<Double?>(capacity) { null }
+
+    private var head = -1  // Most recent data index
+    private var tail = 0   // Oldest retained data index
+    private var endOfLastPacket = 0
+    var count = 0
+    var lastDrawnIndex = 0  // Helps track updates
+
+    val size: Int
+        get() = if (head == -1) 0 else (head - tail + 1).coerceAtMost(capacity)
+
+    val sizeSinceLastPacket: Int
+        get() = if (head == -1) 0 else (head - endOfLastPacket).coerceAtMost(windowSize)
+
+    fun add(value: Double, secondValue: Double? = null) {
+        head = (head + 1) % capacity
+        values1[head] = value
+        values2[head] = secondValue
+        countValues()
+        // If full, move tail forward (preserve window history)
+        if ((head + 1) % capacity == tail) {
+            tail = (tail + 1) % capacity
+        }
+    }
+
+    operator fun get(index: Int): Pair<Double, Double?>? {
+        if (index < 0 || index >= size) return null
+        //val realIndex = (tail + index) % capacity
+        var realIndex = (head - windowSize + index)
+        if (realIndex < 0) realIndex += capacity
+        return values1[realIndex] to values2[realIndex] // to values2[realIndex] == null
+    }
+
+    private fun countValues() {
+        count++
+        if (count >= windowSize) {
+            endOfLastPacket = head
+            count = 0
+        }
+    }
+
+    /**
+     * Retrieves the data window that should be plotted.
+     * This ensures smooth scrolling without dropping old values.
+     */
+    fun getPlotWindow(): List<Pair<Double, Double?>> {
+        val start = maxOf(0, head - windowSize + 1)
+        return (start..head).map { i ->
+            values1[i % capacity] to values2[i % capacity]
+        }
+    }
+
+    /**
+     * Retrieve all stored data (up to capacity) for debugging or CSV export.
+     */
+    fun getAllData(): List<Pair<Double, Double?>> {
+        return (tail..head).map { i ->
+            values1[i % capacity] to values2[i % capacity]
+        }
+    }
+
+    //fun setWindowSize(window: Int) { windowSize = window }
+
+    fun min(): Double? = getPlotWindow().minOfOrNull { it.first }
+    fun max(): Double? = getPlotWindow().maxOfOrNull { it.first }
+
+    fun peaks(threshold: Double): List<Pair<Int, Double>> {
+        return getPlotWindow().mapIndexedNotNull { i, (v, _) ->
+            if (i > 0 && i < size - 1 && v > this[i - 1]?.first!! && v > this[i + 1]?.first!! && v > threshold) {
+                i to v
+            } else null
+        }
+    }
+
+    fun clear() {
+        tail = 0
+        head = -1
+    }
+
+    override fun toString(): String {
+        return getPlotWindow().joinToString(", ")
+    }
+}
+
+class Trace0(
     private val window: Int = 100
 ) {
     private val capacity= 10000
@@ -42,7 +131,7 @@ class Trace(
         return values1[realIndex] to values2[realIndex] // to values2[realIndex] == null
     }
 
-    fun getWindowValue() : List<Double> {
+    fun getPlotWindow() : List<Double> {
         return (0 until size).mapNotNull { this[it]?.first }
     }
 
@@ -50,11 +139,11 @@ class Trace(
         return (0 until size).mapNotNull { this[it] }
     }
 
-    fun min(): Double? = getWindowValue().minOfOrNull { it }
-    fun max(): Double? = getWindowValue().maxOfOrNull { it }
+    fun min(): Double? = getPlotWindow().minOfOrNull { it }
+    fun max(): Double? = getPlotWindow().maxOfOrNull { it }
 
     fun peaks(threshold: Double) : List<Pair<Int, Double>> {
-        return getWindowValue().mapIndexedNotNull { i, v ->
+        return getPlotWindow().mapIndexedNotNull { i, v ->
             if (i > 0 && i < size - 1 && v > this[i - 1]!!.first && v > this[i + 1]!!.first && v > threshold) {
                 i to v
             } else null
@@ -75,7 +164,7 @@ class Trace(
 
 
     override fun toString(): String {
-        return getWindowValue().joinToString(", ")
+        return getPlotWindow().joinToString(", ")
     }
 }
 

@@ -6,5 +6,6 @@ import zm.experiment.model.type.AlertType
 sealed class AppEvent {
     data class PortConnected(val port: Port) : AppEvent()
     data class PortDisconnected(val port: Port, val alert: AlertType = AlertType.NONE) : AppEvent()
-    object PanelChanged : AppEvent()
+    data object PanelChanged : AppEvent()
+    data class CommandSent(val command: String) : AppEvent()
 }

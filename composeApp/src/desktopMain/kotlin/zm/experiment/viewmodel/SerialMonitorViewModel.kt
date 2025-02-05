@@ -13,21 +13,30 @@ import zm.experiment.model.serial.Port
 class SerialMonitorViewModel() : ViewModel() {
     private val buffer = StringBuilder()
     val serialOutput: String get() = buffer.toString()
-    var port: Port? by mutableStateOf<Port?>(null)
+
+    var serialConnected: Boolean by mutableStateOf(false)
         private set
+    var portName: String by mutableStateOf("")
+        private set
+//    var port: Port? by mutableStateOf<Port?>(null)
+//        private set
 
     init {
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
                     AppEvent.PanelChanged -> TODO()
+                    is AppEvent.CommandSent -> {}
                     is AppEvent.PortConnected -> {
-                        port = event.port
-                        println("AppViewModel: Port ${event.port.name} connected")
+                        serialConnected = true
+                        portName = event.port.name
+                        //port = event.port
+                        println("SerialMonitorViewModel: Port ${event.port.name} connected")
 
                     }
                     is AppEvent.PortDisconnected -> {
-                        println("AppViewModel: Port ${event.port.name} disconnected")
+                        serialConnected = false
+                        println("SerialMonitorViewModel: Port ${event.port.name} disconnected")
                     }
                 }
             }

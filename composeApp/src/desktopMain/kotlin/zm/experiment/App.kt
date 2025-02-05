@@ -15,9 +15,11 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.LaptopMac
 import zm.experiment.model.type.SidePanelType
 import zm.experiment.view.Plotter
+import zm.experiment.view.Sidebar
+import zm.experiment.view.icon.IconItem
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.window.SerialMonitorWindow
 import zm.experiment.viewmodel.AppViewModel
@@ -57,16 +59,6 @@ fun App(plot: PlotViewModel = PlotViewModel(), serial: SerialMonitorViewModel = 
                 serial = serial,
                 onCloseRequest = { view.serialMonitorVisibility(false) }
             )
-        }
-    }
-}
-
-@Composable
-@Preview
-fun Chart() {
-    MaterialTheme {
-        Canvas(Modifier.fillMaxSize()) {
-
         }
     }
 }
@@ -188,46 +180,9 @@ fun Sidepanel(view: AppViewModel) {
     }
 }
 
-@Composable
-fun Sidebar(view: AppViewModel) {
-    Column(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(40.dp)
-            .background(Color(229, 229, 229)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(30.dp)
-                .background(Color.White)
-                .border(1.dp, Color(10)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            IconItem(Icons.Outlined.Settings, onClick = { view.showPanel(SidePanelType.SETTINGS) })
-        }
-        Spacer(modifier = Modifier.height(16.dp)) // Space between icons
-        IconItem(Icons.Outlined.ShoppingCart, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor)})
-//        IconItem("icon2.png")
-//        Spacer(modifier = Modifier.height(16.dp))
-//        IconItem("icon3.png")
-    }
-}
 
-@Composable
-fun IconItem(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
-    Icon(
-        imageVector = icon,
-        contentDescription = null, // Add description for accessibility
-        modifier = Modifier
-            .size(30.dp) // Set the icon size
-            .clickable { onClick() },
-        tint = Color.Black // You can change the tint to any color
-    )
-}
+
+
 
 @Composable
 fun SelectSerialPort() {

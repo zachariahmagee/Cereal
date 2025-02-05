@@ -11,8 +11,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.unit.dp
@@ -32,48 +30,48 @@ fun Plot(plot: PlotViewModel) {
 }
 
 // Uses drawable traces and "refreshDrawableTraces
-@Composable
-fun Plotter0(plot: PlotViewModel) {
-    val redrawTrigger = plot.redrawTrigger
-    val last = remember { mutableStateOf(0L) }
-    val elapsed = remember { mutableStateOf(0L)}
-
-    if (last.value == 0L) last.value = System.currentTimeMillis()
-    else {
-        elapsed.value = System.currentTimeMillis() - last.value
-        last.value = System.currentTimeMillis()
-        //println("Elapsed time: ${elapsed.value}")
-    }
-
-    AppTheme {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-
-            val width = size.width
-            val height = size.height
-
-            plot.drawableTraces.forEachIndexed { index, list ->
-                val path = Path()
-
-                val min = list.minOf { it }
-                val max = list.maxOf { it }
-                println("$list")
-                for (i in list.indices) {
-
-                    val x = mapValue(i.toDouble(), 0.0, list.size.toDouble(), 0.0, width.toDouble())
-                    val y = mapValue(list[i], min, max, height.toDouble(), 0.0)
-
-                    if (i == 0) {
-                        path.moveTo(x.toFloat(), y.toFloat())
-                    } else {
-                        path.lineTo(x.toFloat(), y.toFloat())
-                    }
-                }
-                drawPath(path, color = plot.traceColors[index], style = Stroke(width = 5.dp.toPx()))
-            }
-        }
-        Text(text = redrawTrigger.toString(), color = Color.White)
-    }
-}
+//@Composable
+//fun Plotter0(plot: PlotViewModel) {
+//    val redrawTrigger = plot.redrawTrigger
+//    val last = remember { mutableStateOf(0L) }
+//    val elapsed = remember { mutableStateOf(0L)}
+//
+//    if (last.value == 0L) last.value = System.currentTimeMillis()
+//    else {
+//        elapsed.value = System.currentTimeMillis() - last.value
+//        last.value = System.currentTimeMillis()
+//        //println("Elapsed time: ${elapsed.value}")
+//    }
+//
+//    AppTheme {
+//        Canvas(modifier = Modifier.fillMaxSize()) {
+//
+//            val width = size.width
+//            val height = size.height
+//
+//            plot.drawableTraces.forEachIndexed { index, list ->
+//                val path = Path()
+//
+//                val min = list.minOf { it }
+//                val max = list.maxOf { it }
+//                println("$list")
+//                for (i in list.indices) {
+//
+//                    val x = mapValue(i.toDouble(), 0.0, list.size.toDouble(), 0.0, width.toDouble())
+//                    val y = mapValue(list[i], min, max, height.toDouble(), 0.0)
+//
+//                    if (i == 0) {
+//                        path.moveTo(x.toFloat(), y.toFloat())
+//                    } else {
+//                        path.lineTo(x.toFloat(), y.toFloat())
+//                    }
+//                }
+//                drawPath(path, color = plot.traceColors[index], style = Stroke(width = 5.dp.toPx()))
+//            }
+//        }
+//        Text(text = redrawTrigger.toString(), color = Color.White)
+//    }
+//}
 
 
 // Works as best as I have gotten anything to work
@@ -179,24 +177,19 @@ fun Plotter(plot: PlotViewModel) {
         // println("Elapsed time: ${elapsed.value}")
     }
 
-//    LaunchedEffect(Unit) {
-//        if (drawNewData) {
-//            plot.newDataDrawn()
-//        }
-//    }
+    LaunchedEffect(Unit) {
+        if (drawNewData) {
+            plot.newDataDrawn()
+        }
+    }
 
-//    var min by remember { mutableStateOf(plot.traces.min() ?: 0.0) }
-//    var max by remember { mutableStateOf(plot.traces.max() ?: 500.0) }
-//    println("before: $min, $max")
-//    plot.ticks(plot.traces.min(), plot.traces.max())
-//    min = plot.ticks.min
-//    max = plot.ticks.min
-//    println("after: $min, $max")
-//    val ticks by remember { mutableStateOf(plot.ticks)}
-//    var min: Double
-//    var max: Double
+
 
     AppTheme {
+        val graphAxis: Color = custom.grey125
+        val gridlines: Color = custom.grey190
+
+
         Box(modifier = Modifier.fillMaxSize()) {
             Canvas(
                 modifier = Modifier
@@ -209,85 +202,32 @@ fun Plotter(plot: PlotViewModel) {
 //                max = plot.ticks.min//ticks.max
 //                println("$min, $max")
                 drawContent()
-                plot.traces.fastForEach { index, trace ->
-                    val path = generatePath(trace.getWindowValue(), plot.ticks.min, plot.ticks.max, size, padding = 0)
-                    drawPath(path, plot.traceColors[index], style = Stroke(5.dp.toPx()))
+                if (drawNewData) plot.traces.fastForEach { index, trace ->
+                    val path = generatePath(trace.getPlotWindow().map { it.first }, plot.ticks.min, plot.ticks.max, size, padding = 0)
+                    drawPath(path, plot.traceColors[index], style = Stroke(2.dp.toPx()))
                     if (index == 0) plot.pointsDrawn += plot.traces[0].size
+//                    println("done drawing")
+//                    plot.newDataDrawn()
                 }
             }
 
             ) {
                 //drawLine(Color.Red, Offset(0f,0f), Offset(0f, size.height))
 
-                drawRect(Color(119,119,119), Offset(0f, 0f), size, style = Stroke(2.dp.toPx(), join = StrokeJoin.Round))
+                drawRect(graphAxis, Offset(0f, 0f), size, style = Stroke(2.dp.toPx(), join = StrokeJoin.Round))
+                val step = plot.packetSize / plot.ticks.tickCount.toDouble()
+                repeat(plot.ticks.tickCount) { i ->
+                    val y = mapValue(plot.ticks.getTick(i), plot.ticks.min, plot.ticks.max, size.height.toDouble(), 0.0)
+                    drawLine(gridlines, Offset(0f, y), Offset(size.width, y))
+
+                    val x = mapValue(step * i,0.0, plot.packetSize.toDouble(), 0.0, size.width.toDouble())
+                    drawLine(gridlines, Offset(x, 0f), Offset(x, size.height))
+                }
 
             }
         }
     }
 }
-
-
-
-//@Composable
-//fun Plotter2(plot: PlotViewModel) {
-//    val drawNewData = plot.drawNewData
-//
-//    val last = remember { mutableStateOf(0L) }
-//    val elapsed = remember { mutableStateOf(0L)}
-//
-//    if (last.value == 0L) last.value = System.currentTimeMillis()
-//    else {
-//        elapsed.value = System.currentTimeMillis() - last.value
-//        last.value = System.currentTimeMillis()
-//    }
-//
-//    LaunchedEffect(Unit) {
-//        if (drawNewData) {
-//            plot.newDataDrawn()
-//        }
-//    }
-//
-//    Canvas(modifier = Modifier.fillMaxSize()) {
-//        val min = plot.traces.min()
-//        val max = plot.traces.max()
-//        plot.traces.forEachIndexed { index, trace ->
-//            PlotTrace(trace, plot.traceColors[index], size)
-//        }
-//    }
-//}
-//
-//
-//@Composable
-//fun PlotTrace(trace: Trace, traceColor: Color, size: Size, min: Double = trace.min()!!, max: Double = trace.max()!!) {
-//    Spacer(modifier = Modifier.fillMaxSize().drawBehind {
-//        drawIntoCanvas { canvas ->
-//
-//            val path = Path().apply {
-//                if (trace.isNotEmpty) {
-//
-//                    for (i in 0 until trace.size) {
-//                        val x = mapValue(i.toDouble(), 0.0, trace.size.toDouble(), 0.0, size.width.toDouble())
-//                        val y = mapValue(trace[i]!!.first, min, max, size.height.toDouble(), 0.0)
-//
-//                        if (i == 0) {
-//                            moveTo(x.toFloat(), y.toFloat())
-//                        } else {
-//                            lineTo(x.toFloat(), y.toFloat())
-//                        }
-//                        //if (index == 0) plot.pointsDrawn++
-//                    }
-//                }
-//            }
-//            canvas.drawPath(path, Paint().apply {
-//                color = traceColor
-//                style = PaintingStyle.Stroke
-//                strokeWidth = 5f
-//            })
-//        }
-//    })
-//
-//}
-
 
 fun <T> mapValue(value: T, fromMin: T, fromMax: T, toMin: T, toMax: T) : Float where T : Number, T : Comparable<T>{
     return ((value.toFloat() - fromMin.toFloat()) / (fromMax.toFloat() - fromMin.toFloat())) * (toMax.toFloat() - toMin.toFloat()) + toMin.toFloat()

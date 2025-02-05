@@ -49,10 +49,11 @@ class MessageListener(
                 currbps = System.currentTimeMillis()
             }
 
-            //messageScope.launch {
-                //serial.addSerialData(s)
+//            messageScope.launch {
                 parser.parse(s)
-            //}
+                serial.addSerialData(s)
+
+//            }
         //}
     }
 }

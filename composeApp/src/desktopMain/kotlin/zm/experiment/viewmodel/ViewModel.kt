@@ -29,6 +29,8 @@ class AppViewModel(
         private set
     var primaryPort by mutableStateOf<Port>(Port(name = "", id = 0))
         private set
+    var serialConnected by mutableStateOf(false)
+        private set
     var currentAlert by mutableStateOf(AlertType.NONE)
         private set
 
@@ -50,9 +52,14 @@ class AppViewModel(
                     AppEvent.PanelChanged -> TODO()
                     is AppEvent.PortConnected -> {
                         println("AppViewModel: Port ${event.port.name} connected")
+                        serialConnected = event.port.connected
                     }
                     is AppEvent.PortDisconnected -> {
                         println("AppViewModel: Port ${event.port.name} disconnected")
+                        serialConnected = event.port.connected
+                    }
+                    is AppEvent.CommandSent -> {
+                        sendCommandToPort(event.command)
                     }
                 }
             }
@@ -67,6 +74,11 @@ class AppViewModel(
         currentPanel = SidePanelType.NONE
     }
 
+    fun togglePanel(panel: SidePanelType) {
+        if (currentPanel == panel) hidePanel()
+        else showPanel(panel)
+    }
+
     fun serialMonitorVisibility(show: Boolean) {
         showSerialMonitor = show
     }
@@ -79,6 +91,14 @@ class AppViewModel(
 
     fun selectPort(portName: String, id: Int) {
         primaryPort = Port(name = portName, id = id, port = SerialPort.getCommPort(_availablePorts[id]))
+    }
+
+    private fun sendCommandToPort(command: String) : Boolean {
+        if (primaryPort.port!!.isOpen) {
+            val bytesWritten = primaryPort.port!!.writeBytes(command.toByteArray(), command.toByteArray().size)
+            return bytesWritten > 0
+        }
+        return false
     }
 
     private suspend fun refreshPorts() {

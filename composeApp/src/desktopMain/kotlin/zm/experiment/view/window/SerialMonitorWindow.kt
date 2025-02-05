@@ -31,7 +31,7 @@ fun SerialMonitorWindow(serial: SerialMonitorViewModel, onCloseRequest: () -> Un
         textState.value = serial.serialOutput.toString()
     }
     AppTheme {
-        Window(onCloseRequest = onCloseRequest, title = "Serial Monitor: ${serial.port?.name}") {
+        Window(onCloseRequest = onCloseRequest, title = "Serial Monitor: ${serial.portName}") {
             Box(modifier = Modifier.fillMaxSize().background(custom.background)) {
                 Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                     TextField(

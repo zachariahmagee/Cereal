@@ -18,15 +18,21 @@ class Parser(
             if (lineBreak == -1) break
 
             val line = buf.substring(0, lineBreak)
+//            println(line)
+
             buf.delete(0, lineBreak + 1)
             if (line.isEmpty()) break
-
+//            println("line: $line")
             if (isCommand(line)) {
                 parseCommand(line)
                 continue
             }
 
-            val parts = line.split("[,\\s\t]+".toRegex())
+            val parts = line.trim().split("[,\\s\t]+".toRegex())
+
+//            print("parts:")
+//            parts.forEach { print(it) }
+//            println()
             var validParts = 0
             var validLabels = 0
 
@@ -50,8 +56,14 @@ class Parser(
                     val point = part.split(";").map { it.trim() }
 
                 } else {
+//                    println("isNumber: ${part.matches(isNumber)}")
                     if (part.matches(isNumber)) {
-                        part.toDoubleOrNull()?.let { num -> plot.addData(index = index, yValue = num, label = label) }
+                        part.toDoubleOrNull()?.let { num ->
+//                            println("$line, $part, $num")
+                            plot.addData(index = index, yValue = num, label = label)
+                        }
+                    } else {
+//                        println("Not a number: $part")
                     }
                 }
             }
@@ -59,16 +71,17 @@ class Parser(
     }
 
     private fun isCommand(line: String): Boolean {
-        return line.firstOrNull()?.isLetterOrDigit() == false
+        return line.firstOrNull()?.let { it.isLetterOrDigit() || it == '-' } == false
     }
 
     private fun parseCommand(commandString: String) {
-//        val commandKey = commandString.take(1)
-//        val command = commandProcessor.retrieveCommand(commandKey)
-//        command?.let {
-//            it.parse(commandString.drop(1))
-//            it.execute()
-//        }
+        val commandKey = commandString.take(1)
+        val command = plot.commandProcessor.retrieveCommand(commandKey)
+        //if (commandString.startsWith(".")) println("parseCommand: $commandString, $commandKey, ${commandString.drop(1)}")
+        command?.let {
+            it.parse(commandString.drop(1))
+            it.execute(plot)
+        }
     }
 
     fun extract(line: String) {
