@@ -23,7 +23,6 @@ import zm.experiment.model.type.SidePanelType
 class AppViewModel(
     private val plotViewModel: PlotViewModel,
     private val serialViewModel: SerialMonitorViewModel,
-    //private val eventBus: EventBus = EventBus
 ) : ViewModel() {
     var currentPanel by mutableStateOf(SidePanelType.NONE)
         private set

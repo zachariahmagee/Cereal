@@ -161,8 +161,8 @@ fun PlotterGOOD(plot: PlotViewModel) {
 fun <T: Number> generatePath(values: List<T>, min: T, max: T, size: Size, padding: Int) : Path {
     val path: Path = Path()
     for (i in values.indices) {
-        val x = mapValue(i.toDouble(), 0.0, values.size.toDouble(), 0.0 + padding, size.width.toDouble() - padding)
-        val y = mapValue(values[i].toDouble(), min.toDouble(), max.toDouble(), size.height.toDouble() - padding, 0.0 + padding)
+        val x = mapValue(i.toDouble(), 0.0, values.size.toDouble(), 0.0 + padding, size.width.toDouble())
+        val y = mapValue(values[i].toDouble(), min.toDouble(), max.toDouble(), size.height.toDouble() - padding, 0.0)
 
         if (i == 0) path.moveTo(x, y)
         else path.lineTo(x, y)
@@ -213,7 +213,7 @@ fun Plotter(plot: PlotViewModel) {
                 drawContent()
                 if (drawNewData) plot.traces.fastForEach { index, trace ->
                     val values = if (plot.plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
-                    val path = generatePath(values.map { it.first }, plot.ticks.min, plot.ticks.max, size, padding = 0)
+                    val path = generatePath(values.map { it.first }, plot.ticks.min, plot.ticks.max, size, padding = 75)
                     drawPath(path, plot.traceColors[index], style = Stroke(2.dp.toPx()))
                     if (index == 0) plot.pointsDrawn += plot.traces[0].size
 //                    println("done drawing")
@@ -224,18 +224,16 @@ fun Plotter(plot: PlotViewModel) {
             ) {
                 //drawLine(Color.Red, Offset(0f,0f), Offset(0f, size.height))
 
-                drawRect(graphAxis, Offset(0f, 0f), size, style = Stroke(2.dp.toPx(), join = StrokeJoin.Round))
-                val step = plot.packetSize / plot.ticks.tickCount.toDouble()
-                repeat(plot.ticks.tickCount) { i ->
-                    val y = mapValue(plot.ticks.getTick(i), plot.ticks.min, plot.ticks.max, size.height.toDouble(), 0.0)
-                    drawLine(gridlines, Offset(0f, y), Offset(size.width, y))
-
-                    val x = mapValue(step * i,0.0, plot.packetSize.toDouble(), 0.0, size.width.toDouble())
-                    drawLine(gridlines, Offset(x, 0f), Offset(x, size.height))
-                }
-//                for (p in plot.plots) {
+//                drawRect(graphAxis, Offset(0f, 0f), size, style = Stroke(2.dp.toPx(), join = StrokeJoin.Round))
+//                val step = plot.packetSize / plot.ticks.tickCount.toDouble()
+//                repeat(plot.ticks.tickCount) { i ->
+//                    val y = mapValue(plot.ticks.getTick(i), plot.ticks.min, plot.ticks.max, size.height.toDouble(), 0.0)
+//                    drawLine(gridlines, Offset(0f, y), Offset(size.width, y))
 //
+//                    val x = mapValue(step * i,0.0, plot.packetSize.toDouble(), 0.0, size.width.toDouble())
+//                    drawLine(gridlines, Offset(x, 0f), Offset(x, size.height))
 //                }
+                drawPlot(plot.plot, size, textMeasure)
 
             }
         }
@@ -245,7 +243,8 @@ fun Plotter(plot: PlotViewModel) {
 
 
 fun DrawScope.drawPlot(plot: Plot, size: Size, textMeasure: TextMeasurer, showXAxis: Boolean = true) {
-    var new = size - 5
+    drawVerticalAxis(plot.y, size, 75f, textMeasure = textMeasure)
+    drawHorizontalAxis(plot.x, size, 75f, textMeasure = textMeasure)
 }
 
 fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
@@ -254,15 +253,20 @@ fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, tex
         val y = mapValue(yValue, axis.min, axis.max, size.height - padding, 0f)
         val color = if (yValue == axis.min || yValue == 0f) style.axisColor else style.gridColor
         val textLayout = textMeasure.measure(yValue.toString(), style.textStyle)
-        drawText(textLayout, topLeft = Offset(5f, y))
+        drawText(textLayout, topLeft = Offset(0f - 10f, y - 10f))
         drawLine(color, Offset(padding, y), Offset(size.width, y))
     }
 
 }
 
-fun DrawScope.drawHorizontalAxis(axis: Axis, packetSize: Int, pointCount: Int, size: Size, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
+fun DrawScope.drawHorizontalAxis(axis: Axis, /*packetSize: Int, pointCount: Int, */size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
+    //val step = packetSize / axis.ticks.tickCount
     for (xValue in floatRange(axis.min, axis.max, axis.segment)) {
-
+        val x = mapValue(xValue, axis.min, axis.max, 0f + padding, size.width)
+        val color = if (xValue == axis.min || xValue == 0f) style.axisColor else style.gridColor
+        val textLayout = textMeasure.measure(xValue.toString(), style.textStyle)
+        drawText(textLayout, topLeft = Offset(x - 20f, size.height - (padding / 3) * 2))
+        drawLine(color, Offset(x, 0f), Offset(x, size.height - padding))
 
     }
 }

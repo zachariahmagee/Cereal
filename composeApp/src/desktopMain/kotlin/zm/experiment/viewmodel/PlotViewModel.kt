@@ -35,10 +35,12 @@ class PlotViewModel(
     private val _traces = mutableStateListOf<Trace>()
     val traces get() = _traces
 
-    private val _plots = mutableStateListOf<Plot>()
+    private val _plots = mutableStateListOf<Plot>(Plot())
     val plots get() = _plots
 
-    val singlePlot = mutableStateOf(true)
+    val plot get() = _plots[0]
+
+    val singlePlot by mutableStateOf(true)
 
 
     var pointsDrawn: Int by mutableStateOf(0)
@@ -94,13 +96,24 @@ class PlotViewModel(
     fun addData(index: Int, yValue: Double, xValue: Double? = null, label: String = "") {
         if (_traces.size <= index) _traces.add(Trace(packetSize))
         _traces[index].add(yValue, xValue)
-        if (index == 0) count++
+        if (index == _traces.size - 1) {
+            updatePlot(index)
+        }
+    }
 
+    private fun updatePlot(index: Int) {
+        count++
+//        fun update() {
+//
+//            if (singlePlot) {
+//                val min = _traces.min()
+//                val max = _traces.max()
+//            }
+//        }
         when (plottingMode) {
             PlottingMode.SCROLLING -> {
                 drawNewData = true
                 ticks(_traces.min(), _traces.max(), 5)
-                plots[0]
             }
             PlottingMode.FRAMES -> {
                 if (_traces[index].sizeSinceLastPacket >= packetSize - 1) {
@@ -109,8 +122,6 @@ class PlotViewModel(
                 }
             }
         }
-        //println("$label: $value")
-        //redrawTrigger++
     }
 
     fun addLabels(labels: Array<String>) {
@@ -131,9 +142,15 @@ class PlotViewModel(
         plottingMode = mode
     }
 
-    fun ticks(min: Double, max: Double, tickCount: Int = 5) {
-        ticks.calculate(min, max, tickCount)
+    fun ticks(min: Double, max: Double, tickCount: Int = 5, traceIndex: Int = 0) {
+        if (plot.y.autoScale) {
+            ticks.calculate(min, max, tickCount)
+            plot.y.min = ticks.min.toFloat()
+            plot.y.max = ticks.max.toFloat()
+            plot.y.segment = ticks.tickStep.toFloat()//(ticks.getTick(1) - ticks.getTick(0)).toFloat()
+        }
     }
+
     private fun refreshDrawableTraces() {
        viewModelScope.launch(Dispatchers.IO) {
            while (true) {

@@ -16,11 +16,14 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.LaptopMac
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import zm.experiment.model.type.SidePanelType
 import zm.experiment.view.Plotter
 import zm.experiment.view.Sidebar
 import zm.experiment.view.icon.IconItem
 import zm.experiment.view.theme.AppTheme
+import zm.experiment.view.theme.AppTheme.custom
 import zm.experiment.view.window.SerialMonitorWindow
 import zm.experiment.viewmodel.AppViewModel
 import zm.experiment.viewmodel.PlotViewModel
@@ -67,13 +70,31 @@ fun App(plot: PlotViewModel = PlotViewModel(), serial: SerialMonitorViewModel = 
 @Preview
 fun Sidepanel(view: AppViewModel) {
     AppTheme {
+        val divider = custom.divider
+        val strokeWidth = 1f
         Column(
             modifier = Modifier
                 .fillMaxHeight()
                 .width(150.dp)
                 .background(Color(250, 249, 246))
                 //.padding(8.dp)
-                .border(1.dp, Color(217, 217, 217)),
+                //.border(1.dp, Color(217, 217, 217))
+                .drawWithContent {
+                    drawContent()
+                    drawLine(
+                        color = divider,
+                        start = Offset(size.width, 0f),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = strokeWidth
+                    )
+                    drawLine(
+                        color = divider,
+                        start = Offset(0f, size.height - 40f),
+                        end = Offset(size.width, size.height - 40f),
+                        strokeWidth = strokeWidth
+                    )
+                }
+            ,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
         ) {
@@ -82,7 +103,17 @@ fun Sidepanel(view: AppViewModel) {
                     .fillMaxWidth()
                     .height(30.dp)
                     .background(Color.White)
-                    .padding(0.dp),
+                    .padding(0.dp)
+                    .drawWithContent {
+                        drawContent()
+                        drawLine(
+                            color = divider,
+                            start = Offset(0f, size.height),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = strokeWidth
+                        )
+                    }
+                ,
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End,
             ) {

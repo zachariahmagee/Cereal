@@ -38,6 +38,12 @@ fun Sidebar(view: AppViewModel) {
                         end = Offset(size.width, size.height),
                         strokeWidth = strokeWidth
                     )
+                    drawLine(
+                        color = divider,
+                        start = Offset(0f, size.height - 40f),
+                        end = Offset(size.width, size.height - 40f),
+                        strokeWidth = strokeWidth
+                    )
 
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
