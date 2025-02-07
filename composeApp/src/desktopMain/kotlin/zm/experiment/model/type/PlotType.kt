@@ -1,7 +1,7 @@
 package zm.experiment.model.type
 
-enum class PlotType {
-    Cartesian,
-    Polar,
-    Scatter,
+sealed class PlotType {
+    object Cartesian : PlotType()
+    object Polar : PlotType()
+    object Scatter : PlotType()
 }

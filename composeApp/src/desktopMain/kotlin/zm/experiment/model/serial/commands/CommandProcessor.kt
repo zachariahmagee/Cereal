@@ -49,7 +49,7 @@ class CommandProcessor {
 //        CommandChars.CUSTOM_GRID_LINE to CustomGridLineCommand(),
 //        CommandChars.TRACE_COLOR to TraceColorCommand(),
 //        CommandChars.TRACE_LABELS to TraceLabelsCommand(),
-//        CommandChars.AXIS to AxisCommand(),
+        CommandChars.AXIS to AxisCommand(),
 //        CommandChars.TIMESTAMP to TimestampCommand(),
 //        CommandChars.DISPLAY_MODES to DisplayModeCommand(),
 //        CommandChars.SCATTER to ScatterCommand()

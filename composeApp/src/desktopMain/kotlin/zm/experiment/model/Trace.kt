@@ -6,6 +6,7 @@ class Trace(
 ) {
     private val values1 = DoubleArray(capacity)
     private val values2 = Array<Double?>(capacity) { null }
+    var label: String = ""
 
     private var head = -1  // Most recent data index
     private var tail = 0   // Oldest retained data index
@@ -57,6 +58,13 @@ class Trace(
         }
     }
 
+    fun getFramesWindow(): List<Pair<Double, Double?>> {
+        val start = maxOf(0, endOfLastPacket - windowSize + 1)
+        return (start..endOfLastPacket).map { i ->
+            values1[i % capacity] to values2[1 % capacity]
+        }
+    }
+
     /**
      * Retrieve all stored data (up to capacity) for debugging or CSV export.
      */
@@ -67,7 +75,7 @@ class Trace(
     }
 
     //fun setWindowSize(window: Int) { windowSize = window }
-
+    // TODO: Deal with min/max of getFramesWindow
     fun min(): Double? = getPlotWindow().minOfOrNull { it.first }
     fun max(): Double? = getPlotWindow().maxOfOrNull { it.first }
 
@@ -85,7 +93,11 @@ class Trace(
     }
 
     override fun toString(): String {
-        return getPlotWindow().joinToString(", ")
+        return getPlotWindow().map {
+            if (it.second == null) it.first
+            else it
+        }.joinToString(", ")
+
     }
 }
 

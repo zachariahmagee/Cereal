@@ -8,13 +8,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import zm.experiment.model.Ticks
-import zm.experiment.model.Trace
+import zm.experiment.model.*
 import zm.experiment.model.event.AppEvent
 import zm.experiment.model.event.EventBus
-import zm.experiment.model.max
-import zm.experiment.model.min
 import zm.experiment.model.serial.commands.CommandProcessor
+import zm.experiment.model.type.AxisType
+import zm.experiment.model.type.PlotType
 
 enum class PlottingMode {
     SCROLLING,
@@ -26,13 +25,21 @@ class PlotViewModel(
 ) : ViewModel() {
 
     val commandProcessor = CommandProcessor()
-    var count = 0
+    var count: Int by mutableStateOf(0)
+        private set
+
     val traceColors: List<Color> = TraceColors().colors
     private val _traceLabels = mutableStateListOf<String>()
     val traceLabels get() = _traceLabels
 
     private val _traces = mutableStateListOf<Trace>()
     val traces get() = _traces
+
+    private val _plots = mutableStateListOf<Plot>()
+    val plots get() = _plots
+
+    val singlePlot = mutableStateOf(true)
+
 
     var pointsDrawn: Int by mutableStateOf(0)
     var serialConnected: Boolean by mutableStateOf(false)
@@ -55,6 +62,7 @@ class PlotViewModel(
 
     init {
         //refreshDrawableTraces()
+
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
@@ -86,20 +94,19 @@ class PlotViewModel(
     fun addData(index: Int, yValue: Double, xValue: Double? = null, label: String = "") {
         if (_traces.size <= index) _traces.add(Trace(packetSize))
         _traces[index].add(yValue, xValue)
-        //println("current size: ${_traces[index].sizeSinceLastPacket}")
+        if (index == 0) count++
+
         when (plottingMode) {
             PlottingMode.SCROLLING -> {
                 drawNewData = true
                 ticks(_traces.min(), _traces.max(), 5)
+                plots[0]
             }
             PlottingMode.FRAMES -> {
-//                count++
-//                println("counts: $count, ${_traces[index].count}, $packetSize")
-//                if (_traces[index].sizeSinceLastPacket >= packetSize - 1) {
-//                    count = 0
+                if (_traces[index].sizeSinceLastPacket >= packetSize - 1) {
                     drawNewData = true
                     ticks(_traces.min(), _traces.max(), 5)
-//                }
+                }
             }
         }
         //println("$label: $value")
@@ -125,7 +132,7 @@ class PlotViewModel(
     }
 
     fun ticks(min: Double, max: Double, tickCount: Int = 5) {
-        ticks = Ticks(min, max, tickCount)
+        ticks.calculate(min, max, tickCount)
     }
     private fun refreshDrawableTraces() {
        viewModelScope.launch(Dispatchers.IO) {
@@ -136,6 +143,32 @@ class PlotViewModel(
                delay(5L)
            }
        }
+    }
+
+    fun setAxisRange(axis: AxisType, min: Float, max: Float) {
+        when (axis) {
+            AxisType.X -> {
+                _plots.forEach { plot ->
+                    plot.x.min = min
+                    plot.x.max = max
+                    plot.x.autoScale = false
+                }
+            }
+            AxisType.Y -> {
+                _plots.forEach { plot ->
+                    plot.y.min = min
+                    plot.y.max = max
+                    plot.y.autoScale = false
+                }
+            }
+        }
+    }
+
+    fun setAxisDivisions(axis: AxisType, divisions: Int) {
+        when (axis) {
+            AxisType.X -> _plots.forEach { it.x.divisions = divisions }
+            AxisType.Y -> _plots.forEach { it.y.divisions = divisions }
+        }
     }
 }
 

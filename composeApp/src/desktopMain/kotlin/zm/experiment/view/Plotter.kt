@@ -11,14 +11,23 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import zm.experiment.model.Axis
+import zm.experiment.model.Plot
 import zm.experiment.model.max
 import zm.experiment.model.min
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.theme.AppTheme.custom
+import zm.experiment.view.theme.PlotStyle
 import zm.experiment.viewmodel.PlotViewModel
+import zm.experiment.viewmodel.PlottingMode
 
 @Composable
 fun Plot(plot: PlotViewModel) {
@@ -166,7 +175,7 @@ fun <T: Number> generatePath(values: List<T>, min: T, max: T, size: Size, paddin
 fun Plotter(plot: PlotViewModel) {
     val drawNewData = plot.drawNewData
     //val traces by remember { derivedStateOf { plot.traces }}
-
+    val textMeasure = rememberTextMeasurer()
     val last = remember { mutableStateOf(0L) }
     val elapsed = remember { mutableStateOf(0L)}
 
@@ -203,7 +212,8 @@ fun Plotter(plot: PlotViewModel) {
 //                println("$min, $max")
                 drawContent()
                 if (drawNewData) plot.traces.fastForEach { index, trace ->
-                    val path = generatePath(trace.getPlotWindow().map { it.first }, plot.ticks.min, plot.ticks.max, size, padding = 0)
+                    val values = if (plot.plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
+                    val path = generatePath(values.map { it.first }, plot.ticks.min, plot.ticks.max, size, padding = 0)
                     drawPath(path, plot.traceColors[index], style = Stroke(2.dp.toPx()))
                     if (index == 0) plot.pointsDrawn += plot.traces[0].size
 //                    println("done drawing")
@@ -223,56 +233,63 @@ fun Plotter(plot: PlotViewModel) {
                     val x = mapValue(step * i,0.0, plot.packetSize.toDouble(), 0.0, size.width.toDouble())
                     drawLine(gridlines, Offset(x, 0f), Offset(x, size.height))
                 }
+//                for (p in plot.plots) {
+//
+//                }
 
             }
         }
     }
 }
 
+
+
+fun DrawScope.drawPlot(plot: Plot, size: Size, textMeasure: TextMeasurer, showXAxis: Boolean = true) {
+    var new = size - 5
+}
+
+fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
+
+    for (yValue in floatRange(axis.min, axis.max, axis.segment)) {
+        val y = mapValue(yValue, axis.min, axis.max, size.height - padding, 0f)
+        val color = if (yValue == axis.min || yValue == 0f) style.axisColor else style.gridColor
+        val textLayout = textMeasure.measure(yValue.toString(), style.textStyle)
+        drawText(textLayout, topLeft = Offset(5f, y))
+        drawLine(color, Offset(padding, y), Offset(size.width, y))
+    }
+
+}
+
+fun DrawScope.drawHorizontalAxis(axis: Axis, packetSize: Int, pointCount: Int, size: Size, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
+    for (xValue in floatRange(axis.min, axis.max, axis.segment)) {
+
+
+    }
+}
+
+fun DrawScope.drawGridLine(value: Float, start: Offset, end: Offset, isMajor: Boolean, style: PlotStyle = PlotStyle.Default) {
+
+}
+
+fun floatRange(start: Float, end: Float, step: Float)  = sequence {
+    var current = start
+    while (current <= end) {
+        yield(current)
+        current += step
+    }
+}
+
+
+operator fun Size.minus(value: Int) : Size {
+    val height = this.height - value
+    val width = this.width - value
+    return Size(width, height)
+}
+
 fun <T> mapValue(value: T, fromMin: T, fromMax: T, toMin: T, toMax: T) : Float where T : Number, T : Comparable<T>{
     return ((value.toFloat() - fromMin.toFloat()) / (fromMax.toFloat() - fromMin.toFloat())) * (toMax.toFloat() - toMin.toFloat()) + toMin.toFloat()
 }
 
-//fun mapValue(value: Double, fromMin: Double, fromMax: Double, toMin: Double, toMax: Double): Double {
-////    val outgoing = toMin + (toMax - toMin) * ((value - fromMin) / (fromMax - fromMin))
-////    if (outgoing.isNaN()) {
-////        println("Error when mapping value = NaN (not a number)")
-////    } else if (outgoing == Double.MAX_VALUE || outgoing == Double.MIN_VALUE) {
-////        println("Error when mapping value = infinity")
-////    }
-////    return outgoing
-//
-//    return ((value - fromMin) / (fromMax - fromMin)) * (toMax - toMin) + toMin
-//}
-
-//fun mapValueTo(value: Float, start1: Float, stop1: Float, start2: Float, stop2: Float) : Float {
-//    val outgoing = start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1))
-//    return outgoing
-//}
-
-//private fun DrawScope.drawPath(
-//    path: List<Offset>,
-//    color: Color,
-//    thickness: Float = 10f
-//) {
-//    val interpolatedPath = Path().apply {
-//        if (path.isNotEmpty()) {
-//            moveTo(path.first().x, path.first().y)
-//
-//            for (i in 1 .. path.lastIndex) {
-//                val from = path[i - 1]
-//                val to = path[i]
-//                val dx = abs(from.x - to.x)
-//                val dy = abs(from.y - to.y)
-//                lineTo(from.x, to.y)
-//                lineTo(to.x, to.y)
-//
-//
-//            }
-//        }
-//    }
-//    drawPath(path = path, color = color, thickness = thickness)
-//}
 
 fun <T> List<T>.fastForEach(action: (Int, T) -> Unit) {
     for (index in indices) {
