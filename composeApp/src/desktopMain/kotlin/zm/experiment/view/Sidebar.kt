@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import zm.experiment.model.type.SidePanelType
 import zm.experiment.view.icon.IconItem
@@ -86,4 +87,4 @@ fun Sidebar(view: AppViewModel) {
 }
 
 @Composable
-fun IconSpacer() = Spacer(modifier = Modifier.height(5.dp))
+fun IconSpacer(height: Dp = 5.dp) = Spacer(modifier = Modifier.height(height))

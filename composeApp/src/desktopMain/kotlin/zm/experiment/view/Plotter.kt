@@ -19,10 +19,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import zm.experiment.model.Axis
-import zm.experiment.model.Plot
-import zm.experiment.model.max
-import zm.experiment.model.min
+import zm.experiment.model.*
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.theme.AppTheme.custom
 import zm.experiment.view.theme.PlotStyle
@@ -248,11 +245,11 @@ fun DrawScope.drawPlot(plot: Plot, size: Size, textMeasure: TextMeasurer, showXA
 }
 
 fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
-
+    val precision = calculateRequiredPrecision(axis.max, axis.min, axis.segment)
     for (yValue in floatRange(axis.min, axis.max, axis.segment)) {
         val y = mapValue(yValue, axis.min, axis.max, size.height - padding, 0f)
         val color = if (yValue == axis.min || yValue == 0f) style.axisColor else style.gridColor
-        val textLayout = textMeasure.measure(yValue.toString(), style.textStyle)
+        val textLayout = textMeasure.measure(yValue.formatLabelText(precision), style.textStyle)
         drawText(textLayout, topLeft = Offset(0f - 10f, y - 10f))
         drawLine(color, Offset(padding, y), Offset(size.width, y))
     }
@@ -261,10 +258,11 @@ fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, tex
 
 fun DrawScope.drawHorizontalAxis(axis: Axis, /*packetSize: Int, pointCount: Int, */size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
     //val step = packetSize / axis.ticks.tickCount
+    val precision = calculateRequiredPrecision(axis.max, axis.min, axis.segment)
     for (xValue in floatRange(axis.min, axis.max, axis.segment)) {
         val x = mapValue(xValue, axis.min, axis.max, 0f + padding, size.width)
         val color = if (xValue == axis.min || xValue == 0f) style.axisColor else style.gridColor
-        val textLayout = textMeasure.measure(xValue.toString(), style.textStyle)
+        val textLayout = textMeasure.measure(xValue.formatLabelText(precision), style.textStyle)
         drawText(textLayout, topLeft = Offset(x - 20f, size.height - (padding / 3) * 2))
         drawLine(color, Offset(x, 0f), Offset(x, size.height - padding))
 

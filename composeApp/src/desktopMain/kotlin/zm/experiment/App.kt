@@ -19,8 +19,7 @@ import androidx.compose.material.icons.outlined.LaptopMac
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import zm.experiment.model.type.SidePanelType
-import zm.experiment.view.Plotter
-import zm.experiment.view.Sidebar
+import zm.experiment.view.*
 import zm.experiment.view.icon.IconItem
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.theme.AppTheme.custom
@@ -47,10 +46,10 @@ fun App(plot: PlotViewModel = PlotViewModel(), serial: SerialMonitorViewModel = 
             Sidebar(view)
             AnimatedVisibility(view.sidepanelVisible()) {
                 when (view.currentPanel) {
-                    SidePanelType.SETTINGS -> Sidepanel(view)
-                    SidePanelType.PROPERTIES -> {}//SidePanel("Properties", onClose = { viewModel.hidePanel() })
-                    SidePanelType.MARKERS -> {}//SidePanel("Markers", onClose = { viewModel.hidePanel() })
-                    SidePanelType.HELP -> {}//SidePanel("Help", onClose = { viewModel.hidePanel() })
+                    SidePanelType.SETTINGS -> Settings(view) //Sidepanel(view)
+                    SidePanelType.PROPERTIES -> Properties(plot, onClose = { view.hidePanel() } )
+                    SidePanelType.MARKERS -> Markers(plot, onClose = { view.hidePanel() })
+                    SidePanelType.HELP -> Help(view, onClose = { view.hidePanel() })
                     SidePanelType.NONE -> {} // No panel visible
                 }
             }
@@ -64,158 +63,4 @@ fun App(plot: PlotViewModel = PlotViewModel(), serial: SerialMonitorViewModel = 
             )
         }
     }
-}
-
-@Composable
-@Preview
-fun Sidepanel(view: AppViewModel) {
-    AppTheme {
-        val divider = custom.divider
-        val strokeWidth = 1f
-        Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(150.dp)
-                .background(Color(250, 249, 246))
-                //.padding(8.dp)
-                //.border(1.dp, Color(217, 217, 217))
-                .drawWithContent {
-                    drawContent()
-                    drawLine(
-                        color = divider,
-                        start = Offset(size.width, 0f),
-                        end = Offset(size.width, size.height),
-                        strokeWidth = strokeWidth
-                    )
-                    drawLine(
-                        color = divider,
-                        start = Offset(0f, size.height - 40f),
-                        end = Offset(size.width, size.height - 40f),
-                        strokeWidth = strokeWidth
-                    )
-                }
-            ,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(30.dp)
-                    .background(Color.White)
-                    .padding(0.dp)
-                    .drawWithContent {
-                        drawContent()
-                        drawLine(
-                            color = divider,
-                            start = Offset(0f, size.height),
-                            end = Offset(size.width, size.height),
-                            strokeWidth = strokeWidth
-                        )
-                    }
-                ,
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Text(text = "Settings", fontSize = 13.sp, color = Color.Black)
-                Spacer(modifier = Modifier.width(20.dp))
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Close",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clickable { view.hidePanel() }
-                )
-            }
-            Spacer(modifier = Modifier.height(5.dp))
-            Text(text = "Serial Port", fontSize = 12.sp, color = Color.Blue)
-            view.availablePorts.forEachIndexed { index, value ->
-                if (!value.startsWith("tty")) {
-                    val current = value == view.primaryPort.name
-                    var name = view.primaryPort.name
-                    if (name.contains("cu.")) name = name.split(".")[1]
-                    val fill = if (current) Color(175, 238, 238) else Color.White
-
-                    Spacer(modifier = Modifier.height(5.dp))
-                    OutlinedButton(
-                        onClick = {
-                            view.selectPort(value, index)
-                        },
-                        modifier = Modifier
-                            .width(120.dp)
-                            .height(30.dp)
-//                        .background(Color.White)
-//                        .border(1.dp, Color.Black)
-                        //.padding(15.dp, 5.dp),
-//                    colors =
-                        ,
-                        colors = ButtonDefaults.outlinedButtonColors(fill, Color.Black)
-                    ) {
-                        Text(
-                            text = value, fontSize = 10.sp, modifier = Modifier
-                                .padding(0.dp)
-                            //.size(10.dp)
-                        )
-                    }
-
-                }
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            OutlinedButton(
-                onClick = { view.setupSerial() },
-                modifier = Modifier
-                    .width(120.dp)
-                    .height(30.dp),
-                colors = if (view.primaryPort.connected) {
-                    ButtonDefaults.outlinedButtonColors(
-                        if (view.primaryPort.connected) Color(34, 139, 34) else Color.White,
-                        Color.White
-                    )
-                } else {
-                    ButtonDefaults.outlinedButtonColors(
-                        Color.White,
-                        Color.Black,
-                    )
-                }
-            ) {
-                Text(
-                    text = if (view.primaryPort.connected) "Disconnect" else "Connect",
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(0.dp)
-                )
-            }
-//            for (port in SerialPort.getCommPorts()) {
-//                Spacer(modifier = Modifier.height(5.dp))
-//                OutlinedButton(
-//                    onClick = {
-//
-//                    },
-//                    modifier = Modifier
-//                        .width(120.dp)
-//                        .height(30.dp)
-////                        .background(Color.White)
-////                        .border(1.dp, Color.Black)
-//                        //.padding(15.dp, 5.dp),
-////                    colors =
-//                    ,
-//                    colors = ButtonDefaults.outlinedButtonColors(Color.White, Color.Black)
-//                ) {
-//                    Text(text = port.systemPortName, fontSize = 10.sp, modifier = Modifier
-//                        .padding(0.dp)
-//                        //.size(10.dp)
-//                    )
-//                }
-//
-//            }
-        }
-    }
-}
-
-
-
-
-
-@Composable
-fun SelectSerialPort() {
-
 }
