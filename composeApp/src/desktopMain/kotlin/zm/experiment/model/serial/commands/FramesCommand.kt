@@ -25,7 +25,7 @@ class FramesCommand : Command() {
 //            elapsedMs = System.currentTimeMillis() - currFps
             //if (elapsedMs == 0L)
             else elapsedMs = System.currentTimeMillis() - elapsedMs
-            println(elapsedMs)
+            //println("Elapsed MS: $elapsedMs")
             elapsedMs = System.currentTimeMillis()
 //                drawNewData = true
 //                ticks(_traces.min(), _traces.max(), 5)

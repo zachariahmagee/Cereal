@@ -4,7 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -15,7 +14,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -35,126 +33,6 @@ fun Plot(plot: PlotViewModel) {
     }
 }
 
-// Uses drawable traces and "refreshDrawableTraces
-//@Composable
-//fun Plotter0(plot: PlotViewModel) {
-//    val redrawTrigger = plot.redrawTrigger
-//    val last = remember { mutableStateOf(0L) }
-//    val elapsed = remember { mutableStateOf(0L)}
-//
-//    if (last.value == 0L) last.value = System.currentTimeMillis()
-//    else {
-//        elapsed.value = System.currentTimeMillis() - last.value
-//        last.value = System.currentTimeMillis()
-//        //println("Elapsed time: ${elapsed.value}")
-//    }
-//
-//    AppTheme {
-//        Canvas(modifier = Modifier.fillMaxSize()) {
-//
-//            val width = size.width
-//            val height = size.height
-//
-//            plot.drawableTraces.forEachIndexed { index, list ->
-//                val path = Path()
-//
-//                val min = list.minOf { it }
-//                val max = list.maxOf { it }
-//                println("$list")
-//                for (i in list.indices) {
-//
-//                    val x = mapValue(i.toDouble(), 0.0, list.size.toDouble(), 0.0, width.toDouble())
-//                    val y = mapValue(list[i], min, max, height.toDouble(), 0.0)
-//
-//                    if (i == 0) {
-//                        path.moveTo(x.toFloat(), y.toFloat())
-//                    } else {
-//                        path.lineTo(x.toFloat(), y.toFloat())
-//                    }
-//                }
-//                drawPath(path, color = plot.traceColors[index], style = Stroke(width = 5.dp.toPx()))
-//            }
-//        }
-//        Text(text = redrawTrigger.toString(), color = Color.White)
-//    }
-//}
-
-
-// Works as best as I have gotten anything to work
-@Composable
-fun PlotterGOOD(plot: PlotViewModel) {
-    val drawNewData = plot.drawNewData
-    val padding: Int = 25
-    //val traces by remember { derivedStateOf { plot.traces }}
-
-    val last = remember { mutableStateOf(0L) }
-    val elapsed = remember { mutableStateOf(0L)}
-
-    if (last.value == 0L) last.value = System.currentTimeMillis()
-    else {
-        elapsed.value = System.currentTimeMillis() - last.value
-        last.value = System.currentTimeMillis()
-       // println("Elapsed time: ${elapsed.value}")
-    }
-
-//    val redrawTrigger2 by remember { mutableStateOf(0) }
-//
-    LaunchedEffect(Unit) {
-        if (drawNewData) {
-            plot.newDataDrawn()
-        }
-//        while(true) {
-//            withInfiniteAnimationFrameNanos { frameTimeNanos ->
-//                println("Frame drawn at: ${frameTimeNanos / 1_000_000}, ${elapsed.value}, ${plot.drawNewData}")
-//
-//            }
-//        }
-    }
-
-    val min by remember { mutableStateOf(plot.traces.min() ?: 0.0) }
-    val max by remember { mutableStateOf(plot.traces.max() ?: 500.0) }
-    plot.ticks(min, max)
-    val ticks by remember { mutableStateOf(plot.ticks)}
-
-    AppTheme {
-        Canvas(modifier = Modifier
-            .padding(25.dp)
-            .fillMaxSize()
-        ) {
-            if (plot.drawNewData)
-                drawIntoCanvas { canvas ->
-
-                val width = size.width
-                val height = size.height
-                val min = plot.traces.min()
-                val max = plot.traces.max()
-
-                plot.traces.fastForEach { index, trace ->
-                    val path = Path()
-
-                    for (i in 0 until trace.size) {
-                        val x = mapValue(i.toDouble(), 0.0, plot.packetSize.toDouble()/*trace.size.toDouble()*/, 0.0, width.toDouble())
-                        val y = mapValue(trace[i]!!.first, min, max, height.toDouble(), 0.0)
-
-                        if (i == 0) {
-                            path.moveTo(x.toFloat(), y.toFloat())
-                        } else {
-                            path.lineTo(x.toFloat(), y.toFloat())
-                        }
-                        if (index == 0) plot.pointsDrawn++
-                    }
-                    //val path = generatePath(trace.getWindowValue(), min, max, size)
-                    canvas.drawPath(path, Paint().apply {
-                        color = plot.traceColors[index]
-                        style = PaintingStyle.Stroke
-                        strokeWidth = 5f
-                    })
-                }
-            }
-        }
-    }
-}
-
 fun <T: Number> generatePath(values: List<T>, min: T, max: T, size: Size, padding: Int) : Path {
     val path: Path = Path()
     for (i in values.indices) {
@@ -169,8 +47,8 @@ fun <T: Number> generatePath(values: List<T>, min: T, max: T, size: Size, paddin
 
 
 @Composable
-fun Plotter(plot: PlotViewModel) {
-    val drawNewData = plot.drawNewData
+fun Plotter(view: PlotViewModel) {
+    val drawNewData = view.drawNewData
     //val traces by remember { derivedStateOf { plot.traces }}
     val textMeasure = rememberTextMeasurer()
     val last = remember { mutableStateOf(0L) }
@@ -185,7 +63,7 @@ fun Plotter(plot: PlotViewModel) {
 
     LaunchedEffect(Unit) {
         if (drawNewData) {
-            plot.newDataDrawn()
+            view.newDataDrawn()
         }
     }
 
@@ -208,11 +86,11 @@ fun Plotter(plot: PlotViewModel) {
 //                max = plot.ticks.min//ticks.max
 //                println("$min, $max")
                 drawContent()
-                if (drawNewData) plot.traces.fastForEach { index, trace ->
-                    val values = if (plot.plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
-                    val path = generatePath(values.map { it.first }, plot.ticks.min, plot.ticks.max, size, padding = 75)
-                    drawPath(path, plot.traceColors[index], style = Stroke(2.dp.toPx()))
-                    if (index == 0) plot.pointsDrawn += plot.traces[0].size
+                if (drawNewData) view.traces.fastForEach { index, trace ->
+                    val values = if (view.plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
+                    val path = generatePath(values.map { it.first }, view.plot.y.min, view.plot.y.max, size, padding = 75)
+                    drawPath(path, view.traceColors[index], style = Stroke(2.dp.toPx()))
+                    if (index == 0) view.pointsDrawn += view.traces[0].size
 //                    println("done drawing")
 //                    plot.newDataDrawn()
                 }
@@ -230,7 +108,7 @@ fun Plotter(plot: PlotViewModel) {
 //                    val x = mapValue(step * i,0.0, plot.packetSize.toDouble(), 0.0, size.width.toDouble())
 //                    drawLine(gridlines, Offset(x, 0f), Offset(x, size.height))
 //                }
-                drawPlot(plot.plot, size, textMeasure)
+                drawPlot(view.plot, size, textMeasure)
 
             }
         }
@@ -246,7 +124,7 @@ fun DrawScope.drawPlot(plot: Plot, size: Size, textMeasure: TextMeasurer, showXA
 
 fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
     val precision = calculateRequiredPrecision(axis.max, axis.min, axis.segment)
-    for (yValue in floatRange(axis.min, axis.max, axis.segment)) {
+    for (yValue in axis.range()) {//floatRange(axis.min, axis.max, axis.segment)) {
         val y = mapValue(yValue, axis.min, axis.max, size.height - padding, 0f)
         val color = if (yValue == axis.min || yValue == 0f) style.axisColor else style.gridColor
         val textLayout = textMeasure.measure(yValue.formatLabelText(precision), style.textStyle)
@@ -259,13 +137,12 @@ fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, tex
 fun DrawScope.drawHorizontalAxis(axis: Axis, /*packetSize: Int, pointCount: Int, */size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
     //val step = packetSize / axis.ticks.tickCount
     val precision = calculateRequiredPrecision(axis.max, axis.min, axis.segment)
-    for (xValue in floatRange(axis.min, axis.max, axis.segment)) {
+    for (xValue in axis.range()) {//floatRange(axis.min, axis.max, axis.segment)) {
         val x = mapValue(xValue, axis.min, axis.max, 0f + padding, size.width)
         val color = if (xValue == axis.min || xValue == 0f) style.axisColor else style.gridColor
         val textLayout = textMeasure.measure(xValue.formatLabelText(precision), style.textStyle)
         drawText(textLayout, topLeft = Offset(x - 20f, size.height - (padding / 3) * 2))
         drawLine(color, Offset(x, 0f), Offset(x, size.height - padding))
-
     }
 }
 

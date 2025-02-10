@@ -54,8 +54,6 @@ class PlotViewModel(
     var drawNewData: Boolean by mutableStateOf(false)
         private set
 
-    var ticks: Ticks by mutableStateOf(Ticks(0.0, 500.0, 5))
-
     var packetSize: Int by mutableStateOf(500)
         private set
 
@@ -102,7 +100,7 @@ class PlotViewModel(
     }
 
     private fun updatePlot(index: Int) {
-        count++
+        if (index == 0) count++
 //        fun update() {
 //
 //            if (singlePlot) {
@@ -116,7 +114,8 @@ class PlotViewModel(
                 ticks(_traces.min(), _traces.max(), 5)
             }
             PlottingMode.FRAMES -> {
-                if (_traces[index].sizeSinceLastPacket >= packetSize - 1) {
+                //println("Counts: $count, ${_traces[index].sizeSinceLastPacket}, ${packetSize - 1}")
+                if (_traces[index].sizeSinceLastPacket > packetSize - 1) {
                     drawNewData = true
                     ticks(_traces.min(), _traces.max(), 5)
                 }
@@ -144,10 +143,7 @@ class PlotViewModel(
 
     fun ticks(min: Double, max: Double, tickCount: Int = 5, traceIndex: Int = 0) {
         if (plot.y.autoScale) {
-            ticks.calculate(min, max, tickCount)
-            plot.y.min = ticks.min.toFloat()
-            plot.y.max = ticks.max.toFloat()
-            plot.y.segment = ticks.tickStep.toFloat()//(ticks.getTick(1) - ticks.getTick(0)).toFloat()
+            plot.y.calculate(min, max, tickCount)
         }
     }
 

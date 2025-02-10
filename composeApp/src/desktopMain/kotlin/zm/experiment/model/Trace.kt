@@ -1,5 +1,8 @@
 package zm.experiment.model
 
+import kotlin.math.max
+import kotlin.math.min
+
 class Trace(
     var windowSize: Int = 500,
     private val capacity: Int = 10000
@@ -15,10 +18,10 @@ class Trace(
     var lastDrawnIndex = 0  // Helps track updates
 
     val size: Int
-        get() = if (head == -1) 0 else (head - tail + 1).coerceAtMost(capacity)
+        get() = if (head == -1) 0 else (head - tail + capacity) % capacity + 1//(head - tail + 1).coerceAtMost(capacity)
 
     val sizeSinceLastPacket: Int
-        get() = if (head == -1) 0 else (head - endOfLastPacket).coerceAtMost(windowSize)
+        get() = if (head == -1) 0 else (head - endOfLastPacket + capacity) % capacity + 1//(head - endOfLastPacket + 1).coerceAtMost(windowSize)
 
     fun add(value: Double, secondValue: Double? = null) {
         head = (head + 1) % capacity
@@ -36,12 +39,12 @@ class Trace(
         //val realIndex = (tail + index) % capacity
         var realIndex = (head - windowSize + index)
         if (realIndex < 0) realIndex += capacity
-        return values1[realIndex] to values2[realIndex] // to values2[realIndex] == null
+        return values1[realIndex % capacity] to values2[realIndex % capacity] // to values2[realIndex] == null
     }
 
     private fun countValues() {
         count++
-        if (count >= windowSize) {
+        if (count > windowSize - 1) { // - 1 ??
             endOfLastPacket = head
             count = 0
         }
@@ -52,17 +55,37 @@ class Trace(
      * This ensures smooth scrolling without dropping old values.
      */
     fun getPlotWindow(): List<Pair<Double, Double?>> {
-        val start = maxOf(0, head - windowSize + 1)
-        return (start..head).map { i ->
+        var begin = head - windowSize + 1
+        if (begin < 0) begin += capacity
+
+        val end = if (begin > head) capacity + head else head
+
+        return (begin..end).map { i ->
             values1[i % capacity] to values2[i % capacity]
         }
+//        val start = maxOf(0, head - windowSize + 1) // + 1 ??
+//        return (start..head).map { i ->
+//            values1[i % capacity] to values2[i % capacity]
+//        }
     }
 
     fun getFramesWindow(): List<Pair<Double, Double?>> {
-        val start = maxOf(0, endOfLastPacket - windowSize + 1)
-        return (start..endOfLastPacket).map { i ->
-            values1[i % capacity] to values2[1 % capacity]
-        }
+        // TODO: Does this need a + 1 ???
+//        val start = maxOf(0, endOfLastPacket - windowSize + 1)
+
+        var begin = endOfLastPacket - windowSize + 1
+        if (begin < 0) begin += capacity
+
+        val end = if (begin > endOfLastPacket) capacity + endOfLastPacket else endOfLastPacket
+            //println("frame = $begin .. $end ${(max(begin, end) - min(begin, end)) + 1}")
+            return (begin..end).map { i ->
+                values1[i % capacity] to values2[i % capacity]
+            }
+
+//
+//        return (start..endOfLastPacket).map { i ->
+//            values1[i % capacity] to values2[1 % capacity]
+//        }
     }
 
     /**

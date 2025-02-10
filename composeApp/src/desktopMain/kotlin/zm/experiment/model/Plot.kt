@@ -29,13 +29,52 @@ data class Axis(
     var max: Float = 500f,
     var segment: Float = 100f,
     var divisions: Int = -1,
-    val ticks: Ticks = Ticks(min.toDouble(), max.toDouble(), 5),
     val step : Step = Step(),
     var label: String = "",
     var isLogarithmic: Boolean = false,
     var userDefinedBounds: Boolean = false,
     var autoScale: Boolean = true,
-)
+) {
+
+}
+
+fun Axis.range() = sequence {
+    var current = min
+    while (current <= max) {
+        yield(current)
+        current += segment
+    }
+}
+
+fun Axis.calculate(min: Double, max: Double, tickCount: Int = 5) = calculate(min.toFloat(), max.toFloat(), tickCount)
+fun Axis.calculate(min: Float, max: Float, tickCount: Int = 5) {
+    divisions = tickCount
+    segment = (max - min) / divisions
+    val range = max - min
+    val exp = if (range == 0f) {
+        0f
+    } else {
+        floor(log10(range / (divisions - 1)))
+    }
+    val scale: Float = 10f.pow(exp)
+
+    val rawTickStep = (range / (divisions - 1)) / scale
+    for (potentialStep in floatArrayOf(1f, 1.5f, 2.0f, 2.5f, 3.0f, 4.0f, 5.0f, 6.0f, 8.0f, 10.0f)) {
+        if (potentialStep < rawTickStep) {
+            continue
+        }
+
+        segment = potentialStep * scale
+        this.min = segment * floor(min / segment)
+        this.max = this.min + segment * (divisions - 1)
+        if (this.max >= max) {
+            break
+        }
+    }
+
+    divisions -= floor((this.max - max) / segment).toInt()
+}
+
 
 data class Divisions(
     var divisions: Int = -1,
@@ -79,9 +118,6 @@ fun roundToIdeal(num: Float): Double {
 
     return shifted/magnitude
 }
-// TODO: Format text label function
-//fun formatTextLabel()
-
 
 fun Double.formatLabelText(precision: Int): String {
     return _formatLabelText(this, precision)
