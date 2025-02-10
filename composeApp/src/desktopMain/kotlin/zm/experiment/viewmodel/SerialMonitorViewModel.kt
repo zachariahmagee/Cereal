@@ -1,6 +1,9 @@
 package zm.experiment.viewmodel
 
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -11,15 +14,23 @@ import zm.experiment.model.event.EventBus
 import zm.experiment.model.serial.Port
 
 class SerialMonitorViewModel() : ViewModel() {
-    private val buffer = StringBuilder()
-    val serialOutput: String get() = buffer.toString()
+//    private val buffer by mutableStateOf(StringBuilder())
+//    val serialOutput get() = buffer
+
+    private var _buffer by mutableStateOf("")
+    val serialOutput: String get() = _buffer
+
+    private val _lines = mutableStateListOf<String>()
+    val lines: List<String> get() = _lines
 
     var serialConnected: Boolean by mutableStateOf(false)
         private set
     var portName: String by mutableStateOf("")
         private set
-//    var port: Port? by mutableStateOf<Port?>(null)
-//        private set
+    var autoScroll by mutableStateOf(true)
+
+    var count by mutableStateOf(0)
+
 
     init {
         viewModelScope.launch {
@@ -42,10 +53,33 @@ class SerialMonitorViewModel() : ViewModel() {
             }
         }
     }
+
     fun addSerialData(data: String) {
-        if (buffer.length > 500_000) { // Approx. 10,000 lines (adjust as needed)
-            buffer.delete(0, buffer.indexOf("\n") + 1) // Remove oldest line
+        //usingStrings(data)
+    }
+
+    private fun usingList(data: String) {
+        if (_lines.size > 10_000) {
+            repeat(10) {
+                _lines.removeFirst()
+            }
         }
-        buffer.append(data)//.append("\n")
+        _lines.add(data)
+    }
+
+    private fun usingStrings(data: String) {
+        val c = count++.toString()
+        if (_buffer.length > 500_000) { // Approx. 10,000 lines (adjust as needed)
+            //print("$count:  ${_buffer.length}, ")
+            repeat(10) {
+                //_buffer.delete(0, _buffer.indexOf("\n") + 1)
+                _buffer = _buffer.substringAfter("\n")
+            } // Remove oldest lines
+            //println("${_buffer.length}")
+        }
+        //println("--- $c:\t$data")
+
+        //_buffer.append("$c:\t$data")//.append("\n")
+        _buffer += data
     }
 }
