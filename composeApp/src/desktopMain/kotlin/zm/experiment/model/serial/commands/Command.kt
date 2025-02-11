@@ -37,7 +37,7 @@ inline fun <reified T> convertToType(value: String): T {
         Int::class -> value.toInt() as T
         Float::class -> value.toFloat() as T
         Double::class -> value.toDouble() as T
-        Boolean::class ->  value.toBooleanStrictOrNull() as T ?: (value == "true") as T
+        Boolean::class ->  value.toBooleanStrictOrNull() as T ?: (value == "1") as T
         String::class -> value as T
         else -> throw IllegalArgumentException("Unsupported type: ${T::class}")
     }

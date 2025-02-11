@@ -1,9 +1,8 @@
-package zm.experiment.view
+package zm.experiment.view.sidepanel
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.ButtonColors
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
@@ -16,7 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import zm.experiment.model.serial.Port
+import zm.experiment.view.IconSpacer
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.viewmodel.AppViewModel
 

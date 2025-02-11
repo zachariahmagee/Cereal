@@ -1,25 +1,19 @@
 package zm.experiment.view.window
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Window
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import zm.experiment.view.Heading
+import zm.experiment.view.sidepanel.Heading
 import zm.experiment.view.theme.AppTheme
-import zm.experiment.view.theme.AppTheme.custom
 import zm.experiment.viewmodel.SerialMonitorViewModel
 
 
@@ -49,7 +43,7 @@ fun SerialMonitorWindow(serial: SerialMonitorViewModel, onCloseRequest: () -> Un
 
     AppTheme {
         Window(onCloseRequest = onCloseRequest, title = "Serial Monitor: ${serial.portName}") {
-            Box(modifier = Modifier.fillMaxSize().background(custom.background).padding(8.dp)) {
+            //Box(modifier = Modifier.fillMaxSize().background(custom.background).padding(8.dp)) {
                 Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                     Box (modifier = Modifier.padding(4.dp)){
 //                        TextField(
@@ -103,7 +97,7 @@ fun SerialMonitorWindow(serial: SerialMonitorViewModel, onCloseRequest: () -> Un
                     } // Row
                 } // Column
 
-            } // Box
+            //} // Box
         } // Window
     } // AppTheme
 }

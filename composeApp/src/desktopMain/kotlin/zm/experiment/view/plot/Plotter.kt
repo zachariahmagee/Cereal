@@ -1,7 +1,8 @@
-package zm.experiment.view
+package zm.experiment.view.plot
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
@@ -12,39 +13,18 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastForEachIndexed
 import zm.experiment.model.*
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.theme.AppTheme.custom
 import zm.experiment.view.theme.PlotStyle
 import zm.experiment.viewmodel.PlotViewModel
 import zm.experiment.viewmodel.PlottingMode
-
-@Composable
-fun Plot(plot: PlotViewModel) {
-    AppTheme {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-
-        }
-    }
-}
-
-fun <T: Number> generatePath(values: List<T>, min: T, max: T, size: Size, padding: Int) : Path {
-    val path: Path = Path()
-    for (i in values.indices) {
-        val x = mapValue(i.toDouble(), 0.0, values.size.toDouble(), 0.0 + padding, size.width.toDouble())
-        val y = mapValue(values[i].toDouble(), min.toDouble(), max.toDouble(), size.height.toDouble() - padding, 0.0)
-
-        if (i == 0) path.moveTo(x, y)
-        else path.lineTo(x, y)
-    }
-    return path
-}
-
 
 @Composable
 fun Plotter(view: PlotViewModel) {
@@ -68,11 +48,68 @@ fun Plotter(view: PlotViewModel) {
     }
 
 
+    AppTheme {
+        Column(modifier = Modifier.padding(25.dp).fillMaxSize()) {
+            for (plot in view.plots) {
+                Plot(plot, view.traces, view.drawNewData, view.plottingMode, textMeasure, view)
+            }
+
+        }
+    }
+}
+
+@Composable
+fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: PlottingMode, textMeasure: TextMeasurer, view: PlotViewModel) {
+
+    LaunchedEffect(Unit) {
+        if (drawNewData) {
+            view.newDataDrawn()
+        }
+    }
+    Canvas(modifier = Modifier
+        .fillMaxSize()
+        .drawWithContent {
+            drawContent()
+            if (drawNewData) {
+                val plotTraces = plot.traces.map { index -> traces[index] }
+                plotTraces.fastForEachIndexed { _, trace ->
+                    val values = if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
+                    val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = 75)
+                    drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
+                    view.pointsDrawn += trace.size
+                }
+            }
+        }
+    ) {
+            drawPlot(plot, size, textMeasure)
+    }
+}
+
+
+@Composable
+fun PlotterOG(view: PlotViewModel) {
+    val drawNewData = view.drawNewData
+    //val traces by remember { derivedStateOf { plot.traces }}
+    val textMeasure = rememberTextMeasurer()
+    val last = remember { mutableStateOf(0L) }
+    val elapsed = remember { mutableStateOf(0L)}
+
+    if (last.value == 0L) last.value = System.currentTimeMillis()
+    else {
+        elapsed.value = System.currentTimeMillis() - last.value
+        last.value = System.currentTimeMillis()
+        // println("Elapsed time: ${elapsed.value}")
+    }
+
+    LaunchedEffect(Unit) {
+        if (drawNewData) {
+            view.newDataDrawn()
+        }
+    }
+
+
 
     AppTheme {
-        val graphAxis: Color = custom.grey125
-        val gridlines: Color = custom.grey190
-
 
         Box(modifier = Modifier.fillMaxSize()) {
             Canvas(
@@ -86,7 +123,7 @@ fun Plotter(view: PlotViewModel) {
 //                max = plot.ticks.min//ticks.max
 //                println("$min, $max")
                 drawContent()
-                if (drawNewData) view.traces.fastForEach { index, trace ->
+                if (drawNewData) view.traces.fastForEachIndexed { index, trace ->
                     val values = if (view.plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
                     val path = generatePath(values.map { it.first }, view.plot.y.min, view.plot.y.max, size, padding = 75)
                     drawPath(path, view.traceColors[index], style = Stroke(2.dp.toPx()))
@@ -150,6 +187,18 @@ fun DrawScope.drawGridLine(value: Float, start: Offset, end: Offset, isMajor: Bo
 
 }
 
+fun <T: Number> generatePath(values: List<T>, min: T, max: T, size: Size, padding: Int) : Path {
+    val path: Path = Path()
+    for (i in values.indices) {
+        val x = mapValue(i.toDouble(), 0.0, values.size.toDouble(), 0.0 + padding, size.width.toDouble())
+        val y = mapValue(values[i].toDouble(), min.toDouble(), max.toDouble(), size.height.toDouble() - padding, 0.0)
+
+        if (i == 0) path.moveTo(x, y)
+        else path.lineTo(x, y)
+    }
+    return path
+}
+
 fun floatRange(start: Float, end: Float, step: Float)  = sequence {
     var current = start
     while (current <= end) {
@@ -169,9 +218,21 @@ fun <T> mapValue(value: T, fromMin: T, fromMax: T, toMin: T, toMax: T) : Float w
     return ((value.toFloat() - fromMin.toFloat()) / (fromMax.toFloat() - fromMin.toFloat())) * (toMax.toFloat() - toMin.toFloat()) + toMin.toFloat()
 }
 
+//if (numberOfPlots > 1) {
+//    val values = traces[traceIndex].getWindow(plottingMode)
+//    val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = 75)
+//    drawPath(path, traces[traceIndex].color, style = Stroke(2.dp.toPx()))
+//} else {
+//    traces.fastForEachIndexed { index, trace ->
+//        val values = if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
+//        val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = 75)
+//        drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
+//    }
+//}
 
-fun <T> List<T>.fastForEach(action: (Int, T) -> Unit) {
-    for (index in indices) {
-        action(index, get(index))
-    }
-}
+
+//fun <T> List<T>.fastForEach(action: (Int, T) -> Unit) {
+//    for (index in indices) {
+//        action(index, get(index))
+//    }
+//}

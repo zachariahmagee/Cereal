@@ -1,14 +1,18 @@
 package zm.experiment.model
 
+import androidx.compose.ui.graphics.Color
+import zm.experiment.viewmodel.PlottingMode
 import kotlin.math.max
 import kotlin.math.min
 
 class Trace(
     var windowSize: Int = 500,
-    private val capacity: Int = 10000
+    private val capacity: Int = 10000,
+    var color: Color = Color.Black,
 ) {
     private val values1 = DoubleArray(capacity)
     private val values2 = Array<Double?>(capacity) { null }
+
     var label: String = ""
 
     private var head = -1  // Most recent data index
@@ -16,6 +20,8 @@ class Trace(
     private var endOfLastPacket = 0
     var count = 0
     var lastDrawnIndex = 0  // Helps track updates
+
+
 
     val size: Int
         get() = if (head == -1) 0 else (head - tail + capacity) % capacity + 1//(head - tail + 1).coerceAtMost(capacity)
@@ -87,6 +93,10 @@ class Trace(
 //            values1[i % capacity] to values2[1 % capacity]
 //        }
     }
+
+    fun getWindow(mode: PlottingMode = PlottingMode.SCROLLING): List<Pair<Double, Double?>> = if (mode == PlottingMode.SCROLLING) getPlotWindow() else getFramesWindow()
+
+    fun getWindow(test: () -> Boolean) : List<Pair<Double,Double?>> = if (test()) getPlotWindow() else getFramesWindow()
 
     /**
      * Retrieve all stored data (up to capacity) for debugging or CSV export.

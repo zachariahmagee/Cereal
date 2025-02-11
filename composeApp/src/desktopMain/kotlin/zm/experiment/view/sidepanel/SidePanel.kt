@@ -1,4 +1,4 @@
-package zm.experiment.view
+package zm.experiment.view.sidepanel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,7 +14,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import zm.experiment.view.theme.AppTheme

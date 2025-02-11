@@ -15,6 +15,7 @@ import zm.experiment.model.serial.commands.CommandProcessor
 import zm.experiment.model.type.AxisType
 import zm.experiment.model.type.PlotType
 
+
 enum class PlottingMode {
     SCROLLING,
     FRAMES,
@@ -35,13 +36,15 @@ class PlotViewModel(
     private val _traces = mutableStateListOf<Trace>()
     val traces get() = _traces
 
-    private val _plots = mutableStateListOf<Plot>(Plot())
+    private val _plots = mutableStateListOf<Plot>(Plot(0))
     val plots get() = _plots
 
     val plot get() = _plots[0]
 
     val singlePlot by mutableStateOf(true)
 
+    var numberOfPlots by mutableStateOf(0)
+        private set
 
     var pointsDrawn: Int by mutableStateOf(0)
     var serialConnected: Boolean by mutableStateOf(false)
@@ -70,6 +73,8 @@ class PlotViewModel(
                     is AppEvent.CommandSent -> {}
                     is AppEvent.PortConnected -> {
                         _traces.clear()
+                        _plots.subList(1, _plots.size).clear()
+                        plot.reset()
                         count = 0
                         pointsDrawn = 0
                         serialConnected = true
@@ -77,6 +82,7 @@ class PlotViewModel(
 
 
                     }
+
                     is AppEvent.PortDisconnected -> {
                         serialConnected = false
                         receivedCommands = false
@@ -85,14 +91,23 @@ class PlotViewModel(
                             println(trace)
                         }
                         println("PlotViewModel: Port ${event.port.name} disconnected")
-                       // _traces.clear() println("After traces size: ${traces.size}")
+                        // _traces.clear() println("After traces size: ${traces.size}")
                     }
                 }
             }
         }
     }
+
     fun addData(index: Int, yValue: Double, xValue: Double? = null, label: String = "") {
-        if (_traces.size <= index) _traces.add(Trace(packetSize))
+        if (_traces.size <= index) {
+            _traces.add(Trace(packetSize, color = traceColors[index]))
+            if (numberOfPlots > 1) { // also there is a better way to handle this i think.
+                // TODO: Figure out what to do if the plot does not exist
+                if (index < _plots.size) _plots[index].traces.add(index)
+            } else {
+                plot.traces.add(index)
+            }
+        }
         _traces[index].add(yValue, xValue)
         if (index == _traces.size - 1) {
             updatePlot(index)
@@ -113,6 +128,7 @@ class PlotViewModel(
                 drawNewData = true
                 ticks(_traces.min(), _traces.max(), 5)
             }
+
             PlottingMode.FRAMES -> {
                 //println("Counts: $count, ${_traces[index].sizeSinceLastPacket}, ${packetSize - 1}")
                 if (_traces[index].sizeSinceLastPacket > packetSize - 1) {
@@ -148,14 +164,14 @@ class PlotViewModel(
     }
 
     private fun refreshDrawableTraces() {
-       viewModelScope.launch(Dispatchers.IO) {
-           while (true) {
-               withContext(Dispatchers.Main) {
+        viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                withContext(Dispatchers.Main) {
 
-               }
-               delay(5L)
-           }
-       }
+                }
+                delay(5L)
+            }
+        }
     }
 
     fun setAxisRange(axis: AxisType, min: Float, max: Float) {
@@ -167,6 +183,7 @@ class PlotViewModel(
                     plot.x.autoScale = false
                 }
             }
+
             AxisType.Y -> {
                 _plots.forEach { plot ->
                     plot.y.min = min
@@ -183,7 +200,29 @@ class PlotViewModel(
             AxisType.Y -> _plots.forEach { it.y.divisions = divisions }
         }
     }
-}
+
+    fun setGraphType(plotType: PlotType, numberOfPlots: Int = 1) {
+        this.numberOfPlots = numberOfPlots
+        when (plotType) {
+            PlotType.Cartesian -> {
+                if (numberOfPlots > _plots.size) {
+                    for (i in _plots.size until numberOfPlots) {
+                        _plots.add(Plot(i))
+                    }
+                } else {
+                    _plots.subList(numberOfPlots, _plots.size).clear()
+                }
+            }
+
+            PlotType.Polar -> TODO()
+            PlotType.Scatter -> TODO()
+        }
+    }
+
+
+
+
+} // end of PlotViewModel
 
 data class TraceColors(
     val lightBlue: Color = Color(96, 200, 220),

@@ -5,13 +5,25 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.*
 
+
+
 class Plot (
-    val type: PlotType = PlotType.Cartesian,
-    val title: String = "",
+    var id: Int,
+    var type: PlotType = PlotType.Cartesian,
+    var title: String = "",
+    val traces: MutableList<Int> = mutableListOf(),
     private val axis1: Axis = Axis(),
     private val axis2: Axis = Axis(),
-
     ) {
+    private val axes = listOf(axis1, axis2)
+    fun reset() {
+        type = PlotType.Cartesian
+        title = ""
+        traces.clear()
+        traces.add(id)
+        axes.forEach { it.reset() }
+    }
+
     val x: Axis get() = axis1
     val y: Axis get() = axis2
 
@@ -35,6 +47,16 @@ data class Axis(
     var userDefinedBounds: Boolean = false,
     var autoScale: Boolean = true,
 ) {
+    fun reset() {
+        divisions = -1
+        label = ""
+        isLogarithmic = false
+        userDefinedBounds = false
+        autoScale = true
+        min = 0f
+        max = 500f
+        segment = 100f
+    }
 
 }
 
@@ -88,6 +110,9 @@ data class Step(
 //    var majorSegment: Float = -1f,
 )
 
+// roundToIdeal((max - min) * (textHeight * 2) / (b - t)
+//fun Double.roundToIdeal() = roundToIdeal(this)
+//fun Float.roundToIdeal() = roundToIdeal(this)
 fun roundToIdeal(num: Double): Double = roundToIdeal(num.toFloat())
 fun roundToIdeal(num: Float): Double {
 

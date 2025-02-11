@@ -1,4 +1,4 @@
-package zm.experiment.view
+package zm.experiment.view.sidepanel
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
