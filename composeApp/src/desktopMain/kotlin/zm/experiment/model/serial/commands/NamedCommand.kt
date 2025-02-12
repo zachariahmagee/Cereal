@@ -5,6 +5,7 @@ abstract class NamedCommand : Command() {
 
     override fun parse(args: String) {
         namedArgs.clear()
+        println(args)
         val parts = args.split(",").map { it.trim() }
 
         for (part in parts) {

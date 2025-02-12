@@ -73,7 +73,7 @@ class PlotViewModel(
                     is AppEvent.CommandSent -> {}
                     is AppEvent.PortConnected -> {
                         _traces.clear()
-                        _plots.subList(1, _plots.size).clear()
+                        if (_plots.size > 1) _plots.subList(1, _plots.size).clear()
                         plot.reset()
                         count = 0
                         pointsDrawn = 0
@@ -103,41 +103,68 @@ class PlotViewModel(
             _traces.add(Trace(packetSize, color = traceColors[index]))
             if (numberOfPlots > 1) { // also there is a better way to handle this i think.
                 // TODO: Figure out what to do if the plot does not exist
-                if (index < _plots.size) _plots[index].traces.add(index)
+                if (index <= _plots.size) _plots[index].traces.add(index)
             } else {
                 plot.traces.add(index)
             }
         }
         _traces[index].add(yValue, xValue)
-        if (index == _traces.size - 1) {
+
+        if (numberOfPlots > 1) {
+            updatePlots(index)
+        } else if (index == _traces.size - 1) {
             updatePlot(index)
         }
     }
 
     private fun updatePlot(index: Int) {
-        if (index == 0) count++
-//        fun update() {
-//
-//            if (singlePlot) {
-//                val min = _traces.min()
-//                val max = _traces.max()
-//            }
-//        }
+        if (index == _traces.size - 1) count++
+
         when (plottingMode) {
             PlottingMode.SCROLLING -> {
                 drawNewData = true
-                ticks(_traces.min(), _traces.max(), 5)
+                if (plot.y.autoScale) plot.y.calculate(_traces.min(), _traces.max(), 5)
             }
 
             PlottingMode.FRAMES -> {
                 //println("Counts: $count, ${_traces[index].sizeSinceLastPacket}, ${packetSize - 1}")
                 if (_traces[index].sizeSinceLastPacket > packetSize - 1) {
                     drawNewData = true
-                    ticks(_traces.min(), _traces.max(), 5)
+                    if (plot.y.autoScale) plot.y.calculate(_traces.min(), _traces.max(), 5)
                 }
             }
         }
     }
+
+    private fun updatePlots(index: Int) {
+        if (index == _traces.size - 1) count++
+
+        val test: () -> Boolean = { plottingMode == PlottingMode.SCROLLING }
+        when (plottingMode) {
+            PlottingMode.SCROLLING -> {
+                drawNewData = true
+                if (_plots[index].y.autoScale) _plots[index].y.calculate(_traces[index].min(test), _traces[index].max(test), 5)
+            }
+
+            PlottingMode.FRAMES -> {
+                //println("Counts: $count, ${_traces[index].sizeSinceLastPacket}, ${packetSize - 1}")
+                if (_traces[index].sizeSinceLastPacket > packetSize - 1) {
+                    drawNewData = true
+                    if (_plots[index].y.autoScale) _plots[index].y.calculate(_traces[index].min(test), _traces[index].max(test), 5)
+                }
+            }
+        }
+    }
+
+//    fun ticks(min: Double, max: Double, tickCount: Int = 5, traceIndex: Int = 0) {
+//        if (numberOfPlots > 1) {
+//            if (plot.y.autoScale) {
+//                plot.y.calculate(min, max, tickCount)
+//            }
+//        } else {
+//            if (_plots[traceIndex].y.autoScale) _plots[traceIndex].y.calculate(min, max, tickCount)
+//        }
+//    }
 
     fun addLabels(labels: Array<String>) {
         for (label in labels) _traceLabels.add(label)
@@ -157,11 +184,9 @@ class PlotViewModel(
         plottingMode = mode
     }
 
-    fun ticks(min: Double, max: Double, tickCount: Int = 5, traceIndex: Int = 0) {
-        if (plot.y.autoScale) {
-            plot.y.calculate(min, max, tickCount)
-        }
-    }
+
+
+
 
     private fun refreshDrawableTraces() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -175,13 +200,19 @@ class PlotViewModel(
     }
 
     fun setAxisRange(axis: AxisType, min: Float, max: Float) {
+//        _plots.forEach { plot ->
+//            plot.axes[axis.ordinal].min = min
+//            plot.axes[axis.ordinal].max = max
+//            plot.axes[axis.ordinal].autoScale = false
+//        }
         when (axis) {
             AxisType.X -> {
-                _plots.forEach { plot ->
-                    plot.x.min = min
-                    plot.x.max = max
-                    plot.x.autoScale = false
-                }
+                //TODO("Implement User-Defined Bounds")
+//                _plots.forEach { plot ->
+//                    plot.x.min = min
+//                    plot.x.max = max
+//                    plot.x.autoScale = false
+//                }
             }
 
             AxisType.Y -> {
@@ -194,20 +225,42 @@ class PlotViewModel(
         }
     }
 
+    fun setAxisRange(plotIndex: Int, axis: AxisType, min: Float, max: Float) {
+        when (axis) {
+            AxisType.X -> {
+                // TODO: Implement user-defined bounds
+            }
+            AxisType.Y -> {
+                _plots[plotIndex].y.min = min
+                _plots[plotIndex].y.max = max
+                _plots[plotIndex].y.autoScale = false
+            }
+        }
+
+    }
+
     fun setAxisDivisions(axis: AxisType, divisions: Int) {
         when (axis) {
-            AxisType.X -> _plots.forEach { it.x.divisions = divisions }
-            AxisType.Y -> _plots.forEach { it.y.divisions = divisions }
+            AxisType.X -> {}//_plots.forEach { it.x.divisions = divisions }
+            AxisType.Y -> _plots.forEach {
+                it.y.divisions = divisions
+                if (divisions != -1) it.y.segment = (it.y.max - it.y.min) / divisions
+            }
         }
     }
 
     fun setGraphType(plotType: PlotType, numberOfPlots: Int = 1) {
         this.numberOfPlots = numberOfPlots
+        println("Number of Plots: $numberOfPlots")
         when (plotType) {
             PlotType.Cartesian -> {
                 if (numberOfPlots > _plots.size) {
+                    plot.traces.clear()
+                    plot.traces.add(0)
                     for (i in _plots.size until numberOfPlots) {
                         _plots.add(Plot(i))
+                        _plots[i].traces.clear()
+                        _plots[i].traces.add(i)
                     }
                 } else {
                     _plots.subList(numberOfPlots, _plots.size).clear()

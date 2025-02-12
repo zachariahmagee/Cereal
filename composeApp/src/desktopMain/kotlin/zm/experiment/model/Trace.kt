@@ -112,6 +112,16 @@ class Trace(
     fun min(): Double? = getPlotWindow().minOfOrNull { it.first }
     fun max(): Double? = getPlotWindow().maxOfOrNull { it.first }
 
+    fun min(test: ()->Boolean): Double {
+        val window = if (test()) getPlotWindow() else getFramesWindow()
+        return window.minOf { it.first }
+    }
+
+    fun max(test: () -> Boolean): Double {
+        val window = if (test()) getPlotWindow() else getFramesWindow()
+        return window.maxOf { it.first }
+    }
+
     fun peaks(threshold: Double): List<Pair<Int, Double>> {
         return getPlotWindow().mapIndexedNotNull { i, (v, _) ->
             if (i > 0 && i < size - 1 && v > this[i - 1]?.first!! && v > this[i + 1]?.first!! && v > threshold) {

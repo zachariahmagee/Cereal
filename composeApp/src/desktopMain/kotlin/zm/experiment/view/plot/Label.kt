@@ -24,7 +24,7 @@ fun Labels(traces: List<Trace>, textMeasure: TextMeasurer, view: PlotViewModel) 
 }
 
 @Composable
-fun label(label: String, color: Color, textmeasure: TextMeasurer) {
+fun Label(label: String, color: Color, textmeasure: TextMeasurer) {
 
 //    canvas(modifer = modifier.fillmaxsize()) {
 //        label(label, color, textmeasure)
@@ -32,6 +32,13 @@ fun label(label: String, color: Color, textmeasure: TextMeasurer) {
 }
 
 
+@Composable
+fun TraceColorSquare(color: Color, isVisible: (()->Boolean), modifier: Modifier = Modifier) {
+
+}
+
+
 fun DrawScope.label(label: String, color: Color, textMeasure: TextMeasurer) {
 
 }
+

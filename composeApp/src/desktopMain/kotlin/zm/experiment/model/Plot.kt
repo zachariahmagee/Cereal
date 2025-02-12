@@ -15,7 +15,7 @@ class Plot (
     private val axis1: Axis = Axis(),
     private val axis2: Axis = Axis(),
     ) {
-    private val axes = listOf(axis1, axis2)
+    val axes = listOf(axis1, axis2)
     fun reset() {
         type = PlotType.Cartesian
         title = ""
@@ -111,21 +111,20 @@ data class Step(
 )
 
 // roundToIdeal((max - min) * (textHeight * 2) / (b - t)
-//fun Double.roundToIdeal() = roundToIdeal(this)
-//fun Float.roundToIdeal() = roundToIdeal(this)
-fun roundToIdeal(num: Double): Double = roundToIdeal(num.toFloat())
-fun roundToIdeal(num: Float): Double {
 
-    val lessThanZero = num < 0
+fun Double.roundToIdeal(): Double = this.toFloat().roundToIdeal()
+fun Float.roundToIdeal(): Double {
 
-    if (num == 0f) return 0.0
+    val lessThanZero = this < 0
+
+    if (this == 0f) return 0.0
 
     val n: Int = 2
-    val d = ceil(log10(if (lessThanZero) -num else num))
+    val d = ceil(log10(if (lessThanZero) -this else this))
     val power = n - d.toInt()
 
     val magnitude = 10.0.pow(power)
-    var shifted = round(num * magnitude)
+    var shifted = round(this * magnitude)
 
     val absolute = abs(shifted)
 

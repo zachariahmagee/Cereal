@@ -9,7 +9,7 @@ class AxisCommand : NamedCommand() {
     private var axisChar: String = ""
 
     override fun parse(args: String) {
-        super.parse(args)
+
 
         if (":" in args) {
             val parts = args.split(":", limit = 2)
@@ -18,6 +18,8 @@ class AxisCommand : NamedCommand() {
         } else {
             axisChar = args.substring(0, 1)
         }
+
+        super.parse(args.drop(args.indexOfFirst { it.isWhitespace() }))
     }
     override fun execute(plot: PlotViewModel) {
         val min = getFloatArg("m")
@@ -26,10 +28,16 @@ class AxisCommand : NamedCommand() {
         val minor = getFloatArg("s")
         val major = getFloatArg("S")
 
+//        println("$min, $max, $graph, $axisChar")
         val axisType = parseAxis(axisChar)
 
         if (min.isFinite() && max.isFinite() && axisType != null) {
-            plot.setAxisRange(axisType, min, max)
+            println("graph: $graph")
+            if (graph == -1) {
+                plot.setAxisRange(axisType, min, max)
+            } else {
+                plot.setAxisRange(graph, axisType, min, max)
+            }
         }
         if (major.isFinite() && minor.isFinite()) {
             //plot.plots.setAxisSegments(graph, axis, minor, major)

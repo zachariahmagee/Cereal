@@ -38,7 +38,7 @@ class CommandProcessor {
         CommandChars.SCROLLING to command { plot ->
             plot._setPlottingMode(PlottingMode.SCROLLING)
         },
-//        CommandChars.CARTESIAN to CartesianCommand(),
+        CommandChars.CARTESIAN to CartesianCommand(),
 //        CommandChars.POLAR to PolarCommand(),
 //        CommandChars.ADD_TRACES to AddTracesCommand(),
         CommandChars.PACKET_SIZE to PacketSizeCommand(),
