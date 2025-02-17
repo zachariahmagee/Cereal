@@ -60,6 +60,7 @@ class PlotViewModel(
     var packetSize: Int by mutableStateOf(500)
         private set
 
+    var redrawTrigger: Int by mutableStateOf(0)
 
     val MIN_DELTA = 10.0
 

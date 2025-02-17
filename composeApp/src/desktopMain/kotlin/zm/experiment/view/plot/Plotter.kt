@@ -34,6 +34,8 @@ fun Plotter(view: PlotViewModel) {
     val widthInDp = with(density) { size.width.toDp() }
     val heightInDp = with(density) { size.height.toDp() }
 
+    val labelsHeight = with(density) { 20.dp.toPx() }
+
     val textMeasure = rememberTextMeasurer()
     val last = remember { mutableStateOf(0L) }
     val elapsed = remember { mutableStateOf(0L) }
@@ -52,24 +54,30 @@ fun Plotter(view: PlotViewModel) {
 
     AppTheme {
         Column(modifier = Modifier
-            .padding(25.dp)
+            .padding(top = 25.dp, end = 25.dp, start = 25.dp, bottom = 5.dp)
             .fillMaxSize()
             .onGloballyPositioned { layoutCoordinates ->
                 size = Size(
                     layoutCoordinates.size.width.toFloat(),
-                    layoutCoordinates.size.height.toFloat()
+                    layoutCoordinates.size.height.toFloat() - labelsHeight
                 )
             }
         ) {
-            view.plots.fastForEach { plot ->
-                Plot(plot, view.traces, view.drawNewData, view.plottingMode, textMeasure, view, modifier = Modifier.height(heightInDp / view.plots.size))
+            view.plots.fastForEachIndexed { index, plot ->
+                val style: PlotStyle = if (index < view.plots.size - 1) PlotStyle(showHorizontalLabels = true) else PlotStyle.Default
+                val possibleHeight = heightInDp / view.plots.size
+                val height = if (possibleHeight > 75.dp) possibleHeight else 75.dp
+                Plot(plot, view.traces, view.drawNewData, view.plottingMode, textMeasure, view, modifier = Modifier.height(height), style)
+
+                if (view.redrawTrigger++ == 1000) view.redrawTrigger = 0
             }
+            Labels(view)
         }
     }
 }
 
 @Composable
-fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: PlottingMode, textMeasure: TextMeasurer, view: PlotViewModel, modifier: Modifier = Modifier) {
+fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: PlottingMode, textMeasure: TextMeasurer, view: PlotViewModel, modifier: Modifier = Modifier, style: PlotStyle = PlotStyle.Default) {
 
     LaunchedEffect(Unit) {
         if (drawNewData) {
@@ -85,21 +93,24 @@ fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: Pl
 //                print("Plot: ${plot.id} - ")
                 val plotTraces = plot.traces.map { index -> traces[index] }
                 plotTraces.fastForEachIndexed { _, trace ->
-                    val values = if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
-                    val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = 75)
-                    drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
-                    view.pointsDrawn += trace.size
+                    if (trace.isVisible) {
+                        val values = /*trace.getWindow { plottingMode == PlottingMode.SCROLLING } */
+                            if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
+                        val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = 75)
+                        drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
+                        view.pointsDrawn += trace.size
+                    }
                 }
             }
         }
     ) {
-            drawPlot(plot, size, textMeasure)
+            drawPlot(plot, size, textMeasure, style)
     }
 }
 
-fun DrawScope.drawPlot(plot: Plot, size: Size, textMeasure: TextMeasurer, showXAxis: Boolean = true) {
-    drawVerticalAxis(plot.y, size, 75f, textMeasure = textMeasure)
-    drawHorizontalAxis(plot.x, size, 75f, textMeasure = textMeasure)
+fun DrawScope.drawPlot(plot: Plot, size: Size, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default, showXAxis: Boolean = true) {
+    drawVerticalAxis(plot.y, size, 75f, textMeasure = textMeasure, style)
+    drawHorizontalAxis(plot.x, size, 75f, textMeasure = textMeasure, style)
 }
 
 fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default) {
@@ -113,7 +124,7 @@ fun DrawScope.drawVerticalAxis(axis: Axis, size: Size, padding: Float = 50f, tex
 //        drawLine(style.axisColor, Offset(padding, y), Offset(padding - style.tickSize, y))
 //        drawLine(color, Offset(padding, y), Offset(size.width, y))
 
-        drawGridLine(Offset(padding, y), Offset(size.width, y), textLayout, color)
+        drawGridLine(Offset(padding, y), Offset(size.width, y), textLayout, color, style)
     }
 
 }
@@ -130,28 +141,27 @@ fun DrawScope.drawHorizontalAxis(axis: Axis, /*packetSize: Int, pointCount: Int,
 //        drawLine(style.axisColor, Offset(x, size.height - padding + style.tickSize), Offset(x, size.height - padding))
 //        drawLine(color, Offset(x, 0f), Offset(x, size.height - padding))
 
-        drawGridLine(Offset(x, 0f), Offset(x, size.height - padding), textLayout, color)
+        drawGridLine(Offset(x, 0f), Offset(x, size.height - padding), textLayout, color, style)
     }
 }
 
 fun DrawScope.drawGridLine(start: Offset, end: Offset, textLayout: TextLayoutResult, color: Color = PlotStyle.Default.gridColor, style: PlotStyle = PlotStyle.Default) {
     val horizontalAxisLine = start.y != end.y
+    if (!horizontalAxisLine || horizontalAxisLine && style.showHorizontalLabels) {
 
-    val textX = if (horizontalAxisLine) start.x - (textLayout.size.width / 2) else start.x - style.labelPadding
+        val textX = if (horizontalAxisLine) start.x - (textLayout.size.width / 2) else start.x - style.labelPadding
+        val textY = if (horizontalAxisLine) end.y + style.labelOffset else start.y - 12f
+        drawText(textLayout, topLeft = Offset(textX, textY))
 
-    val textY = if (horizontalAxisLine) end.y + style.labelOffset else start.y - 12f
-    drawText(textLayout, topLeft = Offset(textX, textY))
-
-    val tickX = if (horizontalAxisLine) end.x else start.x - style.tickSize
-    val tickY = if (horizontalAxisLine) end.y + style.tickSize else start.y
-    if (horizontalAxisLine) drawLine(style.axisColor, end, Offset(tickX, tickY))
-    else drawLine(style.axisColor, Offset(tickX, tickY), start)
-
+        val tickX = if (horizontalAxisLine) end.x else start.x - style.tickSize
+        val tickY = if (horizontalAxisLine) end.y + style.tickSize else start.y
+        if (horizontalAxisLine) drawLine(style.axisColor, end, Offset(tickX, tickY))
+        else drawLine(style.axisColor, Offset(tickX, tickY), start)
+    }
     drawLine(color, start, end)
-
 }
 
-fun <T: Number> generatePath(values: List<T>, min: T, max: T, size: Size, padding: Int) : Path {
+fun <T: Number> generatePath(values: List<Double>, min: T, max: T, size: Size, padding: Int) : Path {
 //    println("Size: $size")
     val path: Path = Path()
     for (i in values.indices) {
@@ -231,7 +241,6 @@ fun PlotterOG(view: PlotViewModel) {
     }
 
     AppTheme {
-
         Box(modifier = Modifier.fillMaxSize()) {
             Canvas(
                 modifier = Modifier
@@ -249,9 +258,7 @@ fun PlotterOG(view: PlotViewModel) {
                     }
 
             ) {
-
                 drawPlot(view.plot, size, textMeasure)
-
             }
         }
     }

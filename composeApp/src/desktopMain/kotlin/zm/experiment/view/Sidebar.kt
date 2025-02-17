@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import zm.experiment.model.type.SidePanelType
 import zm.experiment.view.icon.IconItem
+import zm.experiment.view.icon.MarkerIcon
 import zm.experiment.view.icon.PlayIcon
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.theme.AppTheme.custom
@@ -78,9 +79,10 @@ fun Sidebar(view: AppViewModel) {
             // TODO: Properties Panel Icon
             // TODO: Screen Capture/ Record Icon
             // TODO: Screenshot Icon
-            // TODO: Markers Icon
+//            MarkerIcon(view)// TODO: Markers Icon
+            IconSpacer()
             // TODO: CSV Icon
-            IconItem(Icons.Outlined.LaptopMac, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor) })
+//            IconItem(Icons.Outlined.LaptopMac, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor) })
             // TODO: Help Icon
         }
     }

@@ -14,13 +14,12 @@ class Trace(
     private val values2 = Array<Double?>(capacity) { null }
 
     var label: String = ""
-
+    var isVisible = true
     private var head = -1  // Most recent data index
     private var tail = 0   // Oldest retained data index
-    private var endOfLastPacket = 0
-    var count = 0
+    private var endOfLastPacket = 0 // last drawn head
+    var count = 0 // points since last drawn head
     var lastDrawnIndex = 0  // Helps track updates
-
 
 
     val size: Int
@@ -127,6 +126,26 @@ class Trace(
             if (i > 0 && i < size - 1 && v > this[i - 1]?.first!! && v > this[i + 1]?.first!! && v > threshold) {
                 i to v
             } else null
+        }
+    }
+
+    fun nextPeak(threshold: Double) = sequence {
+        var lastCheckedIndex = 0  // Keep track of where we left off
+
+        while (true) { // Infinite sequence, stops when no peaks are found
+            val window = getFramesWindow() // Get the latest window
+
+            for (i in lastCheckedIndex until window.size - 1) {
+                if (i > 0 && i < window.size - 1 &&
+                    window[i].first > threshold &&
+                    window[i].first >= window[i - 1].first &&
+                    window[i].first > window[i + 1].first) {
+
+                    yield(i to window[i].first) // Emit the next peak
+                    lastCheckedIndex = i + 1 // Move forward to avoid duplicates
+                    break // Exit loop and wait for the next `next()` call
+                }
+            }
         }
     }
 

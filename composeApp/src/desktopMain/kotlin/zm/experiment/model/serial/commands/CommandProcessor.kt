@@ -48,7 +48,7 @@ class CommandProcessor {
 //        CommandChars.LOG_SCALE to LogarithmicCommand(),
 //        CommandChars.CUSTOM_GRID_LINE to CustomGridLineCommand(),
 //        CommandChars.TRACE_COLOR to TraceColorCommand(),
-//        CommandChars.TRACE_LABELS to TraceLabelsCommand(),
+        CommandChars.TRACE_LABELS to TraceLabelsCommand(),
         CommandChars.AXIS to AxisCommand(),
 //        CommandChars.TIMESTAMP to TimestampCommand(),
 //        CommandChars.DISPLAY_MODES to DisplayModeCommand(),

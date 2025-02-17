@@ -9,7 +9,7 @@ import zm.experiment.viewmodel.PlotViewModel
 @Composable
 fun Markers(view: PlotViewModel, onClose: (() -> Unit)) {
     val modifier: Modifier = Modifier.width(200.dp)
-    SidePanel("Markers", onClose = { onClose() } ) {
+    SidePanel("Markers", modifier = modifier, onClose = { onClose() } ) {
 
     }
 }
