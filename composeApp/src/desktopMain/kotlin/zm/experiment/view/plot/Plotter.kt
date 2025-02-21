@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import zm.experiment.model.*
+import zm.experiment.view.icon.drawMarker
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.theme.PlotStyle
 import zm.experiment.viewmodel.PlotViewModel
@@ -102,6 +103,10 @@ fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: Pl
                     }
                 }
             }
+            view.markers.fastForEach { marker ->
+                val offset: Offset = toOffset(marker.index.toFloat(), marker.value, view.packetSize, plot.y.min, plot.y.max, size, 75)
+                drawMarker(offset, view.traceColors[marker.trace])
+            }
         }
     ) {
             drawPlot(plot, size, textMeasure, style)
@@ -178,7 +183,16 @@ fun <T: Number> generatePath(values: List<Double>, min: T, max: T, size: Size, p
     return path
 }
 
+fun toOffset(xValue: Float, yValue: Float, packetSize: Int, min: Float, max: Float, size: Size, padding: Int = 75): Offset {
+    val x = mapValue(xValue.toDouble(), 0.0, packetSize.toDouble(), 0.0 + padding, size.width.toDouble())
+    val y = mapValue(yValue.toDouble().let { value ->
+        if (value > max.toDouble()) max.toDouble()
+        else if (value < min.toDouble()) min.toDouble()
+        else value
+    }, min.toDouble(), max.toDouble(), size.height.toDouble() - padding, 0.0)
 
+    return Offset(x, y)
+}
 
 
 fun floatRange(start: Float, end: Float, step: Float)  = sequence {

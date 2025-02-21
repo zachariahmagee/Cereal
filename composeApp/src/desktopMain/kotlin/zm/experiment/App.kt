@@ -18,13 +18,14 @@ import zm.experiment.view.sidepanel.Settings
 import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.window.SerialMonitorWindow
 import zm.experiment.viewmodel.AppViewModel
+import zm.experiment.viewmodel.MarkersViewModel
 import zm.experiment.viewmodel.PlotViewModel
 import zm.experiment.viewmodel.SerialMonitorViewModel
 
 
 @Composable
 @Preview
-fun App(plot: PlotViewModel = PlotViewModel(), serial: SerialMonitorViewModel = SerialMonitorViewModel(), view: AppViewModel = AppViewModel(plot, serial)) {
+fun App(plot: PlotViewModel = PlotViewModel(), markers: MarkersViewModel = MarkersViewModel(plot), serial: SerialMonitorViewModel = SerialMonitorViewModel(), view: AppViewModel = AppViewModel(plot, serial)) {
 
     AppTheme {
         var showContent by remember { mutableStateOf(false) }
@@ -41,7 +42,7 @@ fun App(plot: PlotViewModel = PlotViewModel(), serial: SerialMonitorViewModel = 
                 when (view.currentPanel) {
                     SidePanelType.SETTINGS -> Settings(view) //Sidepanel(view)
                     SidePanelType.PROPERTIES -> Properties(plot, onClose = { view.hidePanel() } )
-                    SidePanelType.MARKERS -> Markers(plot, onClose = { view.hidePanel() })
+                    SidePanelType.MARKERS -> Markers(plot, markers, onClose = { view.hidePanel() })
                     SidePanelType.HELP -> Help(view, onClose = { view.hidePanel() })
                     SidePanelType.NONE -> {} // No panel visible
                 }

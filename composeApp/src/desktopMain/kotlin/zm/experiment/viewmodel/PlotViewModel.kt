@@ -46,6 +46,9 @@ class PlotViewModel(
     var numberOfPlots by mutableStateOf(0)
         private set
 
+    private val _markers = mutableListOf<Marker>()
+    val markers get() = _markers
+
     var pointsDrawn: Int by mutableStateOf(0)
     var serialConnected: Boolean by mutableStateOf(false)
         private set
@@ -186,7 +189,37 @@ class PlotViewModel(
     }
 
 
+    fun createMarker(traceIndex: Int = 0, peakSearch: Boolean = true) {
+        if (_markers.isNotEmpty()) {
+            val index = if (peakSearch) _markers.last().index else _markers.last().index + 10 % packetSize
+            val peak = if (peakSearch) _traces[traceIndex].findNextPeak(index) else (index) to _traces[traceIndex][index]!!.first
+        } else {
+            val peak = if (peakSearch) _traces[traceIndex].findNextPeak() else 0 to _traces[traceIndex][0]!!.first
+            _markers.add(Marker(0, peak.second.toFloat(), peak.first, traceIndex))
+        }
+    }
 
+    fun removeMarker(markerID: Int = _markers.size - 1) {
+        _markers.removeAt(markerID)
+    }
+
+    fun moveMarkerForward(markerID: Int, peakSearch: Boolean = true) {
+        val index = _markers[markerID].index
+        val peak = if (peakSearch) _traces[_markers[markerID].trace].findNextPeak(index) else
+            index + 1 % packetSize to _traces[_markers[markerID].trace][index + 1 % packetSize]!!.first
+        println(peak)
+        _markers[markerID].index = peak.first
+        _markers[markerID].value = peak.second.toFloat()
+    }
+
+    fun moveMarkerBackward(markerID: Int, peakSearch: Boolean = true) {
+        val index = _markers[markerID].index
+        val peak = if (peakSearch) _traces[_markers[markerID].trace].findNextPeak(index) else
+            index + 1 % packetSize to _traces[_markers[markerID].trace][index + 1 % packetSize]!!.first
+
+        _markers[markerID].index = peak.first
+        _markers[markerID].value = peak.second.toFloat()
+    }
 
 
     private fun refreshDrawableTraces() {

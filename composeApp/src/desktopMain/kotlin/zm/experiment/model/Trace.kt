@@ -21,6 +21,8 @@ class Trace(
     var count = 0 // points since last drawn head
     var lastDrawnIndex = 0  // Helps track updates
 
+    var max: Double = 0.0
+    var min: Double = 0.0
 
     val size: Int
         get() = if (head == -1) 0 else (head - tail + capacity) % capacity + 1//(head - tail + 1).coerceAtMost(capacity)
@@ -113,12 +115,14 @@ class Trace(
 
     fun min(test: ()->Boolean): Double {
         val window = if (test()) getPlotWindow() else getFramesWindow()
-        return window.minOf { it.first }
+        min = window.minOf { it.first }
+        return min
     }
 
     fun max(test: () -> Boolean): Double {
         val window = if (test()) getPlotWindow() else getFramesWindow()
-        return window.maxOf { it.first }
+        max = window.maxOf { it.first }
+        return max
     }
 
     fun peaks(threshold: Double): List<Pair<Int, Double>> {
@@ -147,6 +151,68 @@ class Trace(
                 }
             }
         }
+    }
+
+    fun findNextPeak(currentIndex: Int = 0, threshold: Double = -30.0/*(max - min) / 2*/) : Pair<Int, Float> {
+        val window = getFramesWindow()//.map { it.first.toFloat() }
+        for (i in currentIndex until window.size - 1) {
+            if (i > 0 && i < window.size - 1 &&
+                window[i].first > threshold &&
+                window[i].first >= window[i - 1].first &&
+                window[i].first > window[i + 1].first) {
+                println("found a peak ${i}, ${window[i].first}")
+                return i to window[i].first.toFloat() // Emit the next peak
+            }
+        }
+        println("Didnt find one")
+        for (i in 0 until currentIndex) {
+            if (i > 0 && i < window.size - 1 &&
+                window[i].first > threshold &&
+                window[i].first >= window[i - 1].first &&
+                window[i].first > window[i + 1].first) {
+
+                return i to window[i].first.toFloat() // Emit the next peak
+            }
+        }
+        println("Still no")
+        return currentIndex to window[currentIndex].first.toFloat()
+    }
+
+//    fun findPreviousPeak(currentIndex: Int = 0, threshold: Double = (max - min) / 2) : Pair<Int, Float> {
+//        val window = getFramesWindow()//.map { it.first.toFloat() }
+//        return window[currentIndex]
+//        var i: Int = currentIndex
+//        for (i in i >= 0; i--) {
+//            if (i > 0 && i < window.size - 1 &&
+//                window[i].first > threshold &&
+//                window[i].first >= window[i - 1].first &&
+//                window[i].first > window[i + 1].first) {
+//
+//                return i to window[i].first.toFloat() // Emit the next peak
+//            }
+//        }
+//        for (i in 0 until currentIndex) {
+//            if (i > 0 && i < window.size - 1 &&
+//                window[i].first > threshold &&
+//                window[i].first >= window[i - 1].first &&
+//                window[i].first > window[i + 1].first) {
+//
+//                return i to window[i].first.toFloat() // Emit the next peak
+//            }
+//        }
+//        return currentIndex to window[currentIndex].first.toFloat()
+//    }
+
+
+
+    fun List<Float>.isPeak(i: Int, threshold: Double): Boolean {
+        return (i > 0 && i < this.size - 1 &&
+            this[i] > threshold &&
+            this[i] >= this[i - 1] &&
+            this[i]> this[i + 1]) //{
+
+            //eturn i to this[i] // Emit the next peak
+        //}
     }
 
     fun clear() {
