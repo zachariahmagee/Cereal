@@ -70,7 +70,7 @@ class PlotViewModel(
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
-                    AppEvent.PanelChanged -> TODO()
+                    is AppEvent.PanelChanged -> {}
                     is AppEvent.CommandSent -> {}
                     is AppEvent.PortConnected -> {
                         _traces.clear()

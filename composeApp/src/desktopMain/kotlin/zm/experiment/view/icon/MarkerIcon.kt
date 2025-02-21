@@ -13,6 +13,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -38,17 +41,30 @@ fun MarkerIcon(view: AppViewModel, modifier: Modifier = Modifier.size(30.dp, 30.
                 drawRect(stroke,  style = Stroke(1.dp.toPx(), join = StrokeJoin.Round))
 
                 val sm = size.width / 10f
-                val path = Path().apply {
-                    moveTo(sm, sm)
-                    lineTo(size.width - sm, sm)
-                    lineTo(size.width / 2, size.height - sm)
-                    close()
-                }
-                drawPath(path = path, color = stroke)
-
+//                val path = Path().apply {
+//                    moveTo(sm, sm)
+//                    lineTo(size.width - sm, sm)
+//                    lineTo(size.width / 2, size.height - sm)
+//                    close()
+//                }
+//                drawPath(path = path, color = stroke)
+//
+                drawMarker(Offset(size.width / 2, size.height - sm), stroke, size.width, size.height)
                 drawText(layout, color = Color.White, Offset(size.width / 2 - layout.size.width / 2, size.height / 2 - 20f))
             }
         }
 
     }
+}
+
+fun DrawScope.drawMarker(point: Offset, color: Color, width: Float = 30f, height: Float = 30f, style: DrawStyle = Fill) {
+    val smw = width / 10f
+    val smh = height / 10f
+    val path = Path().apply {
+        moveTo(point.x, point.y)
+        lineTo(point.x - width / 2 + smw, point.y - height + smh * 2)
+        lineTo(point.x + width / 2 - smw, point.y - height + smh * 2)
+        close()
+    }
+    drawPath(path = path, color = color, style = style)
 }

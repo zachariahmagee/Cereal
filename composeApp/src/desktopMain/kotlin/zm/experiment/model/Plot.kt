@@ -1,6 +1,7 @@
 package zm.experiment.model
 
 import zm.experiment.model.type.PlotType
+import zm.experiment.view.theme.PlotStyle
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.*
@@ -14,6 +15,7 @@ class Plot (
     val traces: MutableList<Int> = mutableListOf(),
     private val axis1: Axis = Axis(),
     private val axis2: Axis = Axis(),
+    val style: PlotStyle = PlotStyle.Default,
     ) {
     val axes = listOf(axis1, axis2)
     fun reset() {

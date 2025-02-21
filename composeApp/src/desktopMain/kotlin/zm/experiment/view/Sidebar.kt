@@ -79,10 +79,10 @@ fun Sidebar(view: AppViewModel) {
             // TODO: Properties Panel Icon
             // TODO: Screen Capture/ Record Icon
             // TODO: Screenshot Icon
-//            MarkerIcon(view)// TODO: Markers Icon
+            MarkerIcon(view)// TODO: Markers Icon
             IconSpacer()
             // TODO: CSV Icon
-//            IconItem(Icons.Outlined.LaptopMac, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor) })
+            IconItem(Icons.Outlined.LaptopMac, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor) })
             // TODO: Help Icon
         }
     }

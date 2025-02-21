@@ -48,7 +48,15 @@ class AppViewModel(
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
-                    AppEvent.PanelChanged -> TODO()
+                    is AppEvent.PanelChanged -> {
+                        when (event.panel) {
+                            SidePanelType.NONE -> {}
+                            SidePanelType.SETTINGS -> {}
+                            SidePanelType.PROPERTIES -> {}
+                            SidePanelType.MARKERS -> {}
+                            SidePanelType.HELP -> {}
+                        }
+                    }
                     is AppEvent.PortConnected -> {
                         println("AppViewModel: Port ${event.port.name} connected")
                         serialConnected = event.port.connected

@@ -36,7 +36,7 @@ class SerialMonitorViewModel() : ViewModel() {
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
-                    AppEvent.PanelChanged -> TODO()
+                    is AppEvent.PanelChanged -> {}
                     is AppEvent.CommandSent -> {}
                     is AppEvent.PortConnected -> {
                         serialConnected = true
