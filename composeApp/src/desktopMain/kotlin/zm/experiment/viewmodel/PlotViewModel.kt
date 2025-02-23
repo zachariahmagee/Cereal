@@ -14,6 +14,7 @@ import zm.experiment.model.event.EventBus
 import zm.experiment.model.serial.commands.CommandProcessor
 import zm.experiment.model.type.AxisType
 import zm.experiment.model.type.PlotType
+import zm.experiment.model.type.SidePanelType
 
 
 enum class PlottingMode {
@@ -46,6 +47,7 @@ class PlotViewModel(
     var numberOfPlots by mutableStateOf(0)
         private set
 
+    var drawMarkers: Boolean by mutableStateOf(false)
     private val _markers = mutableListOf<Marker>()
     val markers get() = _markers
 
@@ -73,7 +75,16 @@ class PlotViewModel(
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
-                    is AppEvent.PanelChanged -> {}
+                    is AppEvent.PanelChanged -> {
+                        drawMarkers = (event.panel == SidePanelType.MARKERS)
+                        when (event.panel) {
+                            SidePanelType.NONE -> {}
+                            SidePanelType.SETTINGS -> {}
+                            SidePanelType.PROPERTIES -> {}
+                            SidePanelType.MARKERS -> {}
+                            SidePanelType.HELP -> {}
+                        }
+                    }
                     is AppEvent.CommandSent -> {}
                     is AppEvent.PortConnected -> {
                         _traces.clear()

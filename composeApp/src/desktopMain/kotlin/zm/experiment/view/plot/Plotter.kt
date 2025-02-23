@@ -1,8 +1,12 @@
 package zm.experiment.view.plot
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -10,12 +14,16 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
@@ -25,6 +33,7 @@ import zm.experiment.view.theme.AppTheme
 import zm.experiment.view.theme.PlotStyle
 import zm.experiment.viewmodel.PlotViewModel
 import zm.experiment.viewmodel.PlottingMode
+import kotlin.math.roundToInt
 
 @Composable
 fun Plotter(view: PlotViewModel) {
@@ -77,42 +86,125 @@ fun Plotter(view: PlotViewModel) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: PlottingMode, textMeasure: TextMeasurer, view: PlotViewModel, modifier: Modifier = Modifier, style: PlotStyle = PlotStyle.Default) {
-
+    var size by remember { mutableStateOf( Size.Zero ) }
     LaunchedEffect(Unit) {
         if (drawNewData) {
             view.newDataDrawn()
         }
     }
-    Canvas(modifier = modifier
-        .fillMaxWidth()
-//        .onGloballyPositioned { coord -> }
-        .drawWithContent {
-            drawContent()
-            if (drawNewData) {
+    Box(modifier = modifier.fillMaxWidth()
+        .onGloballyPositioned { layoutCoordinates ->
+            size = Size(
+                layoutCoordinates.size.width.toFloat(),
+                layoutCoordinates.size.height.toFloat()
+            )
+        }
+        .onPointerEvent(PointerEventType.Move) { event ->
+            val position = event.changes.first().position
+//            println(position)
+
+        }
+        .onPointerEvent(PointerEventType.Press) { event ->
+
+        }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()
+            .onGloballyPositioned { layoutCoordinates ->
+                size = Size(
+                    layoutCoordinates.size.width.toFloat(),
+                    layoutCoordinates.size.height.toFloat()
+                )
+            }
+            .drawWithContent {
+                drawContent()
+                if (drawNewData) {
 //                print("Plot: ${plot.id} - ")
-                val plotTraces = plot.traces.map { index -> traces[index] }
-                plotTraces.fastForEachIndexed { _, trace ->
-                    if (trace.isVisible) {
-                        val values = /*trace.getWindow { plottingMode == PlottingMode.SCROLLING } */
-                            if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
-                        val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = 75)
-                        drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
-                        view.pointsDrawn += trace.size
+                    val plotTraces = plot.traces.map { index -> traces[index] }
+                    plotTraces.fastForEachIndexed { _, trace ->
+                        if (trace.isVisible) {
+                            val values = /*trace.getWindow { plottingMode == PlottingMode.SCROLLING } */
+                                if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
+                            val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = style.padding.toInt())
+                            drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
+                            view.pointsDrawn += trace.size
+                        }
+                    }
+                }
+                if (view.drawMarkers) {
+                    view.markers.fastForEach { marker ->
+                        //plot.toOffset(marker.index.toFloat(), marker.value, size, style.padding.toInt())
+                        val offset: Offset = toOffset(
+                            marker.index.toFloat(),
+                            marker.value,
+                            view.packetSize,
+                            plot.y.min,
+                            plot.y.max,
+                            size,
+                            style.padding.toInt()
+                        )
+                        drawMarker(offset, view.traceColors[marker.trace], 50f, 50f)
                     }
                 }
             }
-            view.markers.fastForEach { marker ->
-                val offset: Offset = toOffset(marker.index.toFloat(), marker.value, view.packetSize, plot.y.min, plot.y.max, size, 75)
-                drawMarker(offset, view.traceColors[marker.trace])
-            }
-        }
-    ) {
+        ) {
             drawPlot(plot, size, textMeasure, style)
+        }
+
+//        print("Markers size: ")
+//        println(view.markers.size)
+//        view.markers.fastForEach { marker ->
+//            view.redrawTrigger++
+//            val offset: Offset by remember { mutableStateOf(toOffset(
+//                marker.index.toFloat(),
+//                marker.value,
+//                view.packetSize,
+//                plot.y.min,
+//                plot.y.max,
+//                size,
+//                75
+//            ))}
+//            println("Size: $size")
+////            Canvas(modifier = Modifier.padding(start = offset.x.dp, top = offset.y.dp)) {
+////                drawRect(Color.Red, Offset.Zero, Size(50f, 50f))
+////            }
+//            //drawMarker(offset, view.traceColors[marker.trace], 50f, 50f)
+//            DraggableMarker(marker, offset, view.traceColors[marker.trace], plot, view) { offset ->
+//                // val x = mapValue(xValue.toDouble(), 0.0, packetSize.toDouble(), 0.0 + padding, size.width.toDouble())
+//                val index = mapValue(offset.x, 0f + 75f, size.width, 0f, view.packetSize.toFloat())
+//                marker.index = index.toInt()
+//                println(index)
+//                println(offset)
+//            }
+//        }
+
     }
 }
 
+@Composable
+fun DraggableMarker(marker: Marker, offset: Offset, color: Color, plot: Plot, view: PlotViewModel, onDrag: (Offset)->Unit) {
+    Canvas(modifier = Modifier
+        //.padding(start = offset.x.dp, top = offset.y.dp)
+        .size(100.dp, 100.dp)
+        .pointerInput(Unit) {
+            detectDragGestures { change, dragAmount ->
+                change.consume()
+                onDrag(dragAmount)
+            }
+        }
+    ) {
+        view.redrawTrigger++
+        //drawRect(Color.Red, Offset.Zero, Size(50f, 50f))
+        drawMarker(offset, color, 50f, 50f)
+    }
+}
+
+
+//        .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+//        .size(50.dp, 50.dp)
+//        .background(color)
 fun DrawScope.drawPlot(plot: Plot, size: Size, textMeasure: TextMeasurer, style: PlotStyle = PlotStyle.Default, showXAxis: Boolean = true) {
     drawVerticalAxis(plot.y, size, 75f, textMeasure = textMeasure, style)
     drawHorizontalAxis(plot.x, size, 75f, textMeasure = textMeasure, style)
@@ -213,6 +305,11 @@ operator fun Size.minus(value: Int) : Size {
 fun <T> mapValue(value: T, fromMin: T, fromMax: T, toMin: T, toMax: T) : Float where T : Number, T : Comparable<T>{
     return ((value.toFloat() - fromMin.toFloat()) / (fromMax.toFloat() - fromMin.toFloat())) * (toMax.toFloat() - toMin.toFloat()) + toMin.toFloat()
 }
+
+fun Offset.map(xFromMin: Float, xFromMax: Float, xToMin: Float, xToMax: Float, yFromMin: Float, yFromMax: Float, yToMin: Float, yToMax: Float) = Offset(
+    x = mapValue(this.x, xFromMin, xFromMax, xToMin, xToMax),
+    y = mapValue(this.y, yFromMin, yFromMax, yToMin, yToMax)
+)
 
 //if (numberOfPlots > 1) {
 //    val values = traces[traceIndex].getWindow(plottingMode)

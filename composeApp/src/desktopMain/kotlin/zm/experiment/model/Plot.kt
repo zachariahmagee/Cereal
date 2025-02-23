@@ -1,12 +1,53 @@
 package zm.experiment.model
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
 import zm.experiment.model.type.PlotType
+import zm.experiment.view.plot.mapValue
 import zm.experiment.view.theme.PlotStyle
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.*
 
+//fun toOffset(xValue: Float, yValue: Float, packetSize: Int, min: Float, max: Float, size: Size, padding: Int = 75): Offset {
+//    val x = mapValue(xValue.toDouble(), 0.0, packetSize.toDouble(), 0.0 + padding, size.width.toDouble())
+//    val y = mapValue(yValue.toDouble().let { value ->
+//        if (value > max.toDouble()) max.toDouble()
+//        else if (value < min.toDouble()) min.toDouble()
+//        else value
+//    }, min.toDouble(), max.toDouble(), size.height.toDouble() - padding, 0.0)
+//
+//    return Offset(x, y)
+//}
 
+
+//fun <T: Number> generatePath(values: List<Double>, min: T, max: T, size: Size, padding: Int) : Path {
+////    println("Size: $size")
+//    val path: Path = Path()
+//    for (i in values.indices) {
+//        val x = mapValue(i.toDouble(), 0.0, values.size.toDouble(), 0.0 + padding, size.width.toDouble())
+//        val y = mapValue(values[i].toDouble().let { value ->
+//            if (value > max.toDouble()) max.toDouble()
+//            else if (value < min.toDouble()) min.toDouble()
+//            else value
+//        }, min.toDouble(), max.toDouble(), size.height.toDouble() - padding, 0.0)
+//
+//        if (i == 0) path.moveTo(x, y)
+//        else path.lineTo(x, y)
+//    }
+//    return path
+//}
+
+fun List<Double>.generatePath(plot: Plot, size: Size, padding: Int = 75): Path {
+    val path: Path = Path()
+    for (i in indices) {
+        val offset = plot.toOffset(i.toFloat(), this[i].toFloat(), size, padding)
+        if (i == 0) path.moveTo(offset.x, offset.y)
+        else path.lineTo(offset.x, offset.y)
+    }
+    return path
+}
 
 class Plot (
     var id: Int,
@@ -17,6 +58,7 @@ class Plot (
     private val axis2: Axis = Axis(),
     val style: PlotStyle = PlotStyle.Default,
     ) {
+
     val axes = listOf(axis1, axis2)
     fun reset() {
         type = PlotType.Cartesian
@@ -31,12 +73,18 @@ class Plot (
 
     val rho: Axis get() = axis2
     val theta: Axis get() = axis1
-
-
 }
 
-
-
+fun Plot.toOffset(xValue: Float, yValue: Float, size: Size, padding: Int = 75): Offset {
+   return Offset(
+       x.mapFrom(xValue, 0f + padding.toFloat(), size.width),
+       y.mapFrom(yValue.let {
+           if (it > y.max) y.max
+           else if (it < y.min) y.min
+           else it
+       }, size.height - padding.toFloat(), 0f)
+   )
+}
 
 data class Axis(
     var min: Float = 0f,
@@ -48,6 +96,7 @@ data class Axis(
     var isLogarithmic: Boolean = false,
     var userDefinedBounds: Boolean = false,
     var autoScale: Boolean = true,
+    var threshold: Float = 250f,
 ) {
     fun reset() {
         divisions = -1
@@ -61,6 +110,9 @@ data class Axis(
     }
 
 }
+
+fun Axis.mapTo(value: Float, fromMin: Float, fromMax: Float): Float = mapValue(value, fromMin, fromMax, min, max)
+fun Axis.mapFrom(value: Float, toMin: Float, toMax: Float): Float = mapValue(value, min, max, toMin, toMax)
 
 fun Axis.range() = sequence {
     var current = min

@@ -8,6 +8,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import zm.experiment.model.Marker
 import zm.experiment.viewmodel.MarkersViewModel
 import zm.experiment.viewmodel.PlotViewModel
@@ -56,29 +57,29 @@ fun MarkerControls(view: MarkersViewModel) {
                 Button(onClick = {
                     view.moveLeft()
                 }) {
-                    Text("Left")
+                    Text("Left", fontSize = 10.sp)
                 }
                 Button(onClick = {
                     view.togglePeakSearch()
                 }) {
-                    Text(if (view.peakSearch) "Peak Search" else "Manual")
+                    Text(if (view.peakSearch) "Peak Search" else "Manual", fontSize = 10.sp)
                 }
                 Button(onClick = {
                     view.moveRight()
                 }) {
-                    Text("Right")
+                    Text("Right", fontSize = 10.sp)
                 }
             }
             Row(modifier = Modifier.fillMaxWidth()) {
                 Button(onClick = {
                     view.addMarker()
                 }) {
-                    Text("Add Marker")
+                    Text("Add Marker", fontSize = 10.sp)
                 }
                 Button(onClick = {
                     view.deleteMarker()
                 }) {
-                    Text("Delete Marker")
+                    Text("Delete Marker", fontSize = 10.sp)
                 }
             }
         }

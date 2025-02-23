@@ -61,14 +61,15 @@ class Trace(
      * Retrieves the data window that should be plotted.
      * This ensures smooth scrolling without dropping old values.
      */
-    fun getPlotWindow(): List<Pair<Double, Double?>> {
+    fun getPlotWindow(): List<Pair<Double, Double>> {
         var begin = head - windowSize + 1
         if (begin < 0) begin += capacity
 
         val end = if (begin > head) capacity + head else head
-
+        var index: Double = 0.0
         return (begin..end).map { i ->
-            values1[i % capacity] to values2[i % capacity]
+            val x = values2[i % capacity] ?: index++
+            values1[i % capacity] to x// if (values2[i % capacity] == null) index++ else values2[i % capacity]
         }
 //        val start = maxOf(0, head - windowSize + 1) // + 1 ??
 //        return (start..head).map { i ->
@@ -76,7 +77,7 @@ class Trace(
 //        }
     }
 
-    fun getFramesWindow(): List<Pair<Double, Double?>> {
+    fun getFramesWindow(): List<Pair<Double, Double>> {
         // TODO: Does this need a + 1 ???
 //        val start = maxOf(0, endOfLastPacket - windowSize + 1)
 
@@ -85,9 +86,11 @@ class Trace(
 
         val end = if (begin > endOfLastPacket) capacity + endOfLastPacket else endOfLastPacket
             //println("frame = $begin .. $end ${(max(begin, end) - min(begin, end)) + 1}")
-            return (begin..end).map { i ->
-                values1[i % capacity] to values2[i % capacity]
-            }
+        var index: Double = 0.0
+        return (begin..end).map { i ->
+            val x: Double = values2[i % capacity] ?: index++//if (values2[i % capacity] == null) index++ else values2[i % capacity]
+            values1[i % capacity] to x
+        }
 
 //
 //        return (start..endOfLastPacket).map { i ->
@@ -155,7 +158,7 @@ class Trace(
 
     fun findNextPeak(currentIndex: Int = 0, threshold: Double = -30.0/*(max - min) / 2*/) : Pair<Int, Float> {
         val window = getFramesWindow()//.map { it.first.toFloat() }
-        for (i in currentIndex until window.size - 1) {
+        for (i in currentIndex + 1 until window.size - 1) {
             if (i > 0 && i < window.size - 1 &&
                 window[i].first > threshold &&
                 window[i].first >= window[i - 1].first &&

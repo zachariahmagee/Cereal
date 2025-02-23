@@ -25,6 +25,16 @@ This application was originally built using Processing-Java, with a custom UI an
 
 
 # To Do
+
+
+---
+<div style="border-left: 4px solid blue; padding: 10px; background-color: #e6e6ff;">
+<span style="color:blue">Currently Working On</span>
+</div>
+- Return the index with cartesian traces for value2
+---
+
+
 - [ ] Plot Types
   - [x] Cartesian
   - [ ] Scatter

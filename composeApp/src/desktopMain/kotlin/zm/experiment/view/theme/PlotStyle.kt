@@ -13,6 +13,7 @@ class PlotStyle (
     var majorStroke: Float = 2f,
     var minorStroke: Float = 2f,
     var tickSize: Float = 15f,
+    var padding: Float = 75f,
     var showHorizontalLabels: Boolean = true,
     var labelPadding: Float = 100f, //50f,
     var labelOffset: Float = 25f, //15f,
