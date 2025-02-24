@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.onClick
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -14,6 +15,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
@@ -23,6 +27,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -104,12 +109,12 @@ fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: Pl
         }
         .onPointerEvent(PointerEventType.Move) { event ->
             val position = event.changes.first().position
-//            println(position)
-
         }
         .onPointerEvent(PointerEventType.Press) { event ->
 
         }
+//        .onClick(Unit) {}
+
     ) {
         Canvas(modifier = Modifier.fillMaxSize()
             .onGloballyPositioned { layoutCoordinates ->
@@ -127,62 +132,44 @@ fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: Pl
                         if (trace.isVisible) {
                             val values = /*trace.getWindow { plottingMode == PlottingMode.SCROLLING } */
                                 if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
-                            val path = generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = style.padding.toInt())
+                            val path = trace.generatePath(plot, size, plottingMode, 75)
+//                            val path = values.map { it.first }.generatePath(plot, size, 75) //generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = style.padding.toInt())
                             drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
                             view.pointsDrawn += trace.size
                         }
                     }
                 }
-                if (view.drawMarkers) {
-                    view.markers.fastForEach { marker ->
-                        //plot.toOffset(marker.index.toFloat(), marker.value, size, style.padding.toInt())
-                        val offset: Offset = toOffset(
-                            marker.index.toFloat(),
-                            marker.value,
-                            view.packetSize,
-                            plot.y.min,
-                            plot.y.max,
-                            size,
-                            style.padding.toInt()
-                        )
-                        drawMarker(offset, view.traceColors[marker.trace], 50f, 50f)
-                    }
-                }
+
             }
         ) {
             drawPlot(plot, size, textMeasure, style)
         }
-
-//        print("Markers size: ")
-//        println(view.markers.size)
-//        view.markers.fastForEach { marker ->
-//            view.redrawTrigger++
-//            val offset: Offset by remember { mutableStateOf(toOffset(
-//                marker.index.toFloat(),
-//                marker.value,
-//                view.packetSize,
-//                plot.y.min,
-//                plot.y.max,
-//                size,
-//                75
-//            ))}
-//            println("Size: $size")
-////            Canvas(modifier = Modifier.padding(start = offset.x.dp, top = offset.y.dp)) {
-////                drawRect(Color.Red, Offset.Zero, Size(50f, 50f))
-////            }
-//            //drawMarker(offset, view.traceColors[marker.trace], 50f, 50f)
-//            DraggableMarker(marker, offset, view.traceColors[marker.trace], plot, view) { offset ->
-//                // val x = mapValue(xValue.toDouble(), 0.0, packetSize.toDouble(), 0.0 + padding, size.width.toDouble())
-//                val index = mapValue(offset.x, 0f + 75f, size.width, 0f, view.packetSize.toFloat())
-//                marker.index = index.toInt()
-//                println(index)
-//                println(offset)
-//            }
-//        }
-
+        if (view.drawMarkers) {
+            view.markers.fastForEach { marker ->
+                val offset: Offset = plot.toOffset(marker.index.toFloat(), marker.value, size, style.padding.toInt())
+                Canvas(modifier = Modifier) {
+                    drawMarker(offset, view.traceColors[marker.trace], 50f, 50f)
+                }
+            }
+        }
     }
 }
 
+//if (view.drawMarkers) {
+//    view.markers.fastForEach { marker ->
+//        val offset = plot.toOffset(marker.index.toFloat(), marker.value, size, style.padding.toInt())
+//        view.setMarkerOffset(marker.id, offset)
+//        drawMarker(offset, view.traceColors[marker.trace], 50f, 50f)
+//    }
+//}
+
+//                DraggableMarker(marker, offset, view.traceColors[marker.trace], plot, view) { offset ->
+//                    // val x = mapValue(xValue.toDouble(), 0.0, packetSize.toDouble(), 0.0 + padding, size.width.toDouble())
+//                    val index = mapValue(offset.x, 0f + 75f, size.width, 0f, view.packetSize.toFloat())
+//                    marker.index = index.toInt()
+//                    println(index)
+//                    println(offset)
+//                }
 @Composable
 fun DraggableMarker(marker: Marker, offset: Offset, color: Color, plot: Plot, view: PlotViewModel, onDrag: (Offset)->Unit) {
     Canvas(modifier = Modifier

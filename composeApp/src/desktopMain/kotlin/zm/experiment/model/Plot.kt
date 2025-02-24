@@ -49,6 +49,8 @@ fun List<Double>.generatePath(plot: Plot, size: Size, padding: Int = 75): Path {
     return path
 }
 
+//fun
+
 class Plot (
     var id: Int,
     var type: PlotType = PlotType.Cartesian,

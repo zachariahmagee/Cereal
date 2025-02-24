@@ -1,15 +1,19 @@
 package zm.experiment.view.sidepanel
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.Button
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import zm.experiment.model.Marker
+import zm.experiment.view.theme.AppTheme
 import zm.experiment.viewmodel.MarkersViewModel
 import zm.experiment.viewmodel.PlotViewModel
 
@@ -50,40 +54,72 @@ fun MarkerDisplay(marker: Marker) {
  * */
 @Composable
 fun MarkerControls(view: MarkersViewModel) {
-
-    Surface(modifier = Modifier.fillMaxWidth().height(300.dp)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = {
-                    view.moveLeft()
-                }) {
-                    Text("Left", fontSize = 10.sp)
+    AppTheme {
+        Surface(modifier = Modifier.fillMaxWidth().height(300.dp).padding(4.dp)) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton1(onClick = {
+                        view.moveLeft()
+                    }) {
+                        Text("Left", fontSize = 10.sp, modifier = Modifier.padding(0.dp))
+                    }
+                    Spacer(modifier = Modifier.padding(4.dp))
+                    OutlinedButton1(onClick = {
+                        view.togglePeakSearch()
+                    }) {
+                        Text(if (view.peakSearch) "Peak Search" else "Manual", fontSize = 8.sp, modifier = Modifier.padding(0.dp))
+                    }
+                    Spacer(modifier = Modifier.padding(4.dp))
+                    OutlinedButton1(onClick = {
+                        view.moveRight()
+                    }) {
+                        Text("Right", fontSize = 8.sp, modifier = Modifier.padding(0.dp))
+                    }
                 }
-                Button(onClick = {
-                    view.togglePeakSearch()
-                }) {
-                    Text(if (view.peakSearch) "Peak Search" else "Manual", fontSize = 10.sp)
-                }
-                Button(onClick = {
-                    view.moveRight()
-                }) {
-                    Text("Right", fontSize = 10.sp)
-                }
-            }
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = {
-                    view.addMarker()
-                }) {
-                    Text("Add Marker", fontSize = 10.sp)
-                }
-                Button(onClick = {
-                    view.deleteMarker()
-                }) {
-                    Text("Delete Marker", fontSize = 10.sp)
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton1(onClick = {
+                        view.addMarker()
+                    }) {
+                        Text("Add Marker", fontSize = 8.sp, modifier = Modifier.padding(0.dp))
+                    }
+                    Spacer(modifier = Modifier.padding(4.dp))
+                    OutlinedButton1(onClick = {
+                        view.deleteMarker()
+                    }) {
+                        Text("Delete Marker", fontSize = 8.sp, modifier = Modifier.padding(0.dp))
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+fun OutlinedButton1(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,//.padding(2.dp),
+    enabled: Boolean = true,
+    shape: Shape = MaterialTheme.shapes.small,
+    border: BorderStroke? = ButtonDefaults.outlinedBorder,
+    colors: ButtonColors = ButtonDefaults.outlinedButtonColors(
+        contentColor = Color.Black,
+        backgroundColor = Color.White
+    ),
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    content: @Composable RowScope.() -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        shape = shape,
+        border = border,
+        colors = colors,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+        content = content
+    )
 }
 
 @Composable

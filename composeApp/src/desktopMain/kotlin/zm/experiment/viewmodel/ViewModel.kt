@@ -75,10 +75,16 @@ class AppViewModel(
 
     fun showPanel(panel: SidePanelType) {
         currentPanel = panel
+        viewModelScope.launch {
+            EventBus.send(AppEvent.PanelChanged(currentPanel))
+        }
     }
 
     fun hidePanel() {
         currentPanel = SidePanelType.NONE
+        viewModelScope.launch {
+            EventBus.send(AppEvent.PanelChanged(currentPanel))
+        }
     }
 
     fun togglePanel(panel: SidePanelType) {

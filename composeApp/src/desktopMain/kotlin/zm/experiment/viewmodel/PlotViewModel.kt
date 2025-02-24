@@ -1,6 +1,7 @@
 package zm.experiment.viewmodel
 
 import androidx.compose.runtime.*
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,9 +23,7 @@ enum class PlottingMode {
     FRAMES,
 }
 
-class PlotViewModel(
-
-) : ViewModel() {
+class PlotViewModel() : ViewModel() {
 
     val commandProcessor = CommandProcessor()
     var count: Int by mutableStateOf(0)
@@ -50,6 +49,8 @@ class PlotViewModel(
     var drawMarkers: Boolean by mutableStateOf(false)
     private val _markers = mutableListOf<Marker>()
     val markers get() = _markers
+
+    var selectedMarkerID by mutableStateOf(0)
 
     var pointsDrawn: Int by mutableStateOf(0)
     var serialConnected: Boolean by mutableStateOf(false)
@@ -77,6 +78,7 @@ class PlotViewModel(
                 when (event) {
                     is AppEvent.PanelChanged -> {
                         drawMarkers = (event.panel == SidePanelType.MARKERS)
+                        println("drawMarkers: $drawMarkers")
                         when (event.panel) {
                             SidePanelType.NONE -> {}
                             SidePanelType.SETTINGS -> {}
@@ -171,16 +173,6 @@ class PlotViewModel(
         }
     }
 
-//    fun ticks(min: Double, max: Double, tickCount: Int = 5, traceIndex: Int = 0) {
-//        if (numberOfPlots > 1) {
-//            if (plot.y.autoScale) {
-//                plot.y.calculate(min, max, tickCount)
-//            }
-//        } else {
-//            if (_plots[traceIndex].y.autoScale) _plots[traceIndex].y.calculate(min, max, tickCount)
-//        }
-//    }
-
     fun addLabels(labels: Array<String>) {
         for (label in labels) _traceLabels.add(label)
     }
@@ -199,6 +191,9 @@ class PlotViewModel(
         plottingMode = mode
     }
 
+    fun selectMarker(selectedMarkerID: Int) {
+        this.selectedMarkerID = selectedMarkerID
+    }
 
     fun createMarker(traceIndex: Int = 0, peakSearch: Boolean = true) {
         if (_markers.isNotEmpty()) {
@@ -212,6 +207,10 @@ class PlotViewModel(
 
     fun removeMarker(markerID: Int = _markers.size - 1) {
         _markers.removeAt(markerID)
+    }
+
+    fun setMarkerOffset(id: Int, offset: Offset) {
+        _markers[id].offset = offset
     }
 
     fun moveMarkerForward(markerID: Int, peakSearch: Boolean = true) {
@@ -320,7 +319,7 @@ class PlotViewModel(
 
 
 
-} // end of PlotViewModel
+}
 
 data class TraceColors(
     val lightBlue: Color = Color(96, 200, 220),

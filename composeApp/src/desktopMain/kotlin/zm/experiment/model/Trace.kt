@@ -1,6 +1,8 @@
 package zm.experiment.model
 
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import zm.experiment.viewmodel.PlottingMode
 import kotlin.math.max
 import kotlin.math.min
@@ -98,9 +100,20 @@ class Trace(
 //        }
     }
 
-    fun getWindow(mode: PlottingMode = PlottingMode.SCROLLING): List<Pair<Double, Double?>> = if (mode == PlottingMode.SCROLLING) getPlotWindow() else getFramesWindow()
+    fun generatePath(plot: Plot, size: Size, mode: PlottingMode, padding: Int = 75): Path {
+        val path: Path = Path()
+        val values = if (mode == PlottingMode.FRAMES) getFramesWindow() else getPlotWindow()//getWindow(mode)
+        for ((y, x) in values) {
+            val offset = plot.toOffset(x.toFloat(), y.toFloat(), size, padding)
+            if (x == 0.0) path.moveTo(offset.x, offset.y)
+            else path.lineTo(offset.x, offset.y)
+        }
+        return path
+    }
 
-    fun getWindow(test: () -> Boolean) : List<Pair<Double,Double?>> = if (test()) getPlotWindow() else getFramesWindow()
+    fun getWindow(mode: PlottingMode = PlottingMode.SCROLLING): List<Pair<Double, Double>> = if (mode == PlottingMode.SCROLLING) getPlotWindow() else getFramesWindow()
+
+    fun getWindow(test: () -> Boolean) : List<Pair<Double,Double>> = if (test()) getPlotWindow() else getFramesWindow()
 
     /**
      * Retrieve all stored data (up to capacity) for debugging or CSV export.
@@ -224,10 +237,7 @@ class Trace(
     }
 
     override fun toString(): String {
-        return getPlotWindow().map {
-            if (it.second == null) it.first
-            else it
-        }.joinToString(", ")
+        return getPlotWindow().joinToString(", ")
 
     }
 }

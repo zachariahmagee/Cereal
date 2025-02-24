@@ -13,7 +13,7 @@ import zm.experiment.model.type.SidePanelType
 class MarkersViewModel(private val plot: PlotViewModel) : ViewModel() {
 
     val markers get() = plot.markers
-    var selectedMarkerID: Int = 0;
+    val selectedMarkerID get() = plot.selectedMarkerID;
     var peakSearch: Boolean by mutableStateOf(false)
 
 
@@ -35,7 +35,7 @@ class MarkersViewModel(private val plot: PlotViewModel) : ViewModel() {
     }
 
     fun selectMarker(id: Int) {
-        selectedMarkerID = id
+        plot.selectMarker(selectedMarkerID)
     }
 
     fun addMarker() {
