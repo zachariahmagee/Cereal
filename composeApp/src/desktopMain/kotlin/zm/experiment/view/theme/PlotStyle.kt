@@ -1,5 +1,6 @@
 package zm.experiment.view.theme
 
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -15,6 +16,7 @@ class PlotStyle (
     var tickSize: Float = 15f,
     var padding: Float = 75f,
     var showHorizontalLabels: Boolean = true,
+    var markerSize: Size = Size(50f,50f),
     var labelPadding: Float = 100f, //50f,
     var labelOffset: Float = 25f, //15f,
     val textStyle: TextStyle = TextStyle(fontSize = 12.sp, color = textColor, fontWeight = FontWeight.SemiBold)

@@ -1,5 +1,6 @@
 package zm.experiment.view.plot
 
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -14,6 +15,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
@@ -43,7 +46,7 @@ import kotlin.math.roundToInt
 @Composable
 fun Plotter(view: PlotViewModel) {
     val drawNewData = view.drawNewData
-
+    val drawMarkers = view.drawMarkers
     var size by remember { mutableStateOf( Size.Zero ) }
     val density = LocalDensity.current
     val widthInDp = with(density) { size.width.toDp() }
@@ -66,7 +69,7 @@ fun Plotter(view: PlotViewModel) {
             view.newDataDrawn()
         }
     }
-
+    val selected = AppTheme.custom.selected
     AppTheme {
         Column(modifier = Modifier
             .padding(top = 25.dp, end = 25.dp, start = 25.dp, bottom = 5.dp)
@@ -82,8 +85,45 @@ fun Plotter(view: PlotViewModel) {
                 val style: PlotStyle = if (index < view.plots.size - 1) PlotStyle(showHorizontalLabels = true) else PlotStyle.Default
                 val possibleHeight = heightInDp / view.plots.size
                 val height = if (possibleHeight > 75.dp) possibleHeight else 75.dp
-                Plot(plot, view.traces, view.drawNewData, view.plottingMode, textMeasure, view, modifier = Modifier.height(height), style)
+                Box(modifier = Modifier.fillMaxWidth().height(height)) {
+                    Plot(
+                        plot,
+                        view.traces,
+                        view.drawNewData,
+                        view.plottingMode,
+                        textMeasure,
+                        view,
+                        modifier = Modifier.height(height),
+                        style
+                    )
 
+                    if (view.drawMarkers) {
+                        view.markers.fastForEach { marker ->
+//                            var offset = Offset(marker.offset.x - style.markerSize.width / 2, marker.offset.y - style.markerSize.height)
+                            Canvas(modifier = Modifier
+                                .drawWithContent {
+                                    view.redrawTrigger++
+                                    view.setMarkerOffset(marker.id, plot.toOffset(marker.index.toFloat(), marker.value, size, style.padding.toInt()))
+                                    if (marker.id == view.selectedMarkerID) {
+                                        val x = marker.offset.x - style.markerSize.width / 2
+                                        val y = marker.offset.y - style.markerSize.height - 12f
+
+                                        drawRect(selected, Offset(x, y), Size(50f, 10f))
+                                    }
+                                    drawContent()
+//                                    drawMarker(marker.offset, view.traceColors[marker.trace], 50f, 50f)
+                                }
+                                .graphicsLayer {
+                                    shadowElevation = 0.5f
+                                }
+                            ) {
+                                drawRect(Color.Red, Offset.Zero, size, style = Stroke(2f))
+                                view.redrawTrigger++
+                                drawMarker(marker.offset, view.traceColors[marker.trace], style.markerSize.width, style.markerSize.height)
+                            }
+                        }
+                    }
+                }
                 if (view.redrawTrigger++ == 1000) view.redrawTrigger = 0
             }
             Labels(view)
@@ -94,11 +134,80 @@ fun Plotter(view: PlotViewModel) {
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: PlottingMode, textMeasure: TextMeasurer, view: PlotViewModel, modifier: Modifier = Modifier, style: PlotStyle = PlotStyle.Default) {
+
     var size by remember { mutableStateOf( Size.Zero ) }
     LaunchedEffect(Unit) {
         if (drawNewData) {
             view.newDataDrawn()
         }
+
+    }
+        Canvas(modifier = Modifier.fillMaxSize()
+            .onGloballyPositioned { layoutCoordinates ->
+                size = Size(
+                    layoutCoordinates.size.width.toFloat(),
+                    layoutCoordinates.size.height.toFloat()
+                )
+            }
+            .onPointerEvent(PointerEventType.Move) { event ->
+                val position = event.changes.first().position
+            }
+            .drawWithContent {
+                drawContent()
+                if (drawNewData) {
+                    val plotTraces = plot.traces.map { index -> traces[index] }
+                    plotTraces.fastForEachIndexed { _, trace ->
+                        if (trace.isVisible) {
+                            val path = trace.generatePath(plot, size, plottingMode, 75)
+                            drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
+                            view.pointsDrawn += trace.size
+                        }
+                    }
+                }
+
+            }
+        ) {
+            drawPlot(plot, size, textMeasure, style)
+        }
+}
+
+@Composable
+fun Markers(drawMarkers: Boolean, markers: List<Marker>, plot: Plot, view: PlotViewModel) {
+    val selected = AppTheme.custom.selected
+    if (drawMarkers) {
+        markers.fastForEach { marker ->
+            Canvas(modifier = Modifier
+                .drawWithContent {
+                    view.redrawTrigger++
+                    view.setMarkerOffset(marker.id, plot.toOffset(marker.index.toFloat(), marker.value, size, plot.style.padding.toInt()))
+                    if (marker.id == view.selectedMarkerID) {
+                        val y = marker.offset.y - 50f - 15f
+                        drawRect(selected, Offset(marker.offset.x, y), Size(50f, 10f))
+                    }
+                    drawMarker(marker.offset, view.traceColors[marker.trace], 50f, 50f)
+                }
+                .graphicsLayer {
+//                        updateTransition(view.redrawTrigger)
+                    shadowElevation = 0.5f
+                }
+            ) {
+                drawMarker(marker.offset, view.traceColors[marker.trace], 50f, 50f)
+            }
+        }
+    }
+}
+
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun Plot1(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: PlottingMode, textMeasure: TextMeasurer, view: PlotViewModel, modifier: Modifier = Modifier, style: PlotStyle = PlotStyle.Default) {
+    val selected = AppTheme.custom.selected
+    var size by remember { mutableStateOf( Size.Zero ) }
+    LaunchedEffect(Unit) {
+        if (drawNewData) {
+            view.newDataDrawn()
+        }
+
     }
     Box(modifier = modifier.fillMaxWidth()
         .onGloballyPositioned { layoutCoordinates ->
@@ -113,8 +222,7 @@ fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: Pl
         .onPointerEvent(PointerEventType.Press) { event ->
 
         }
-//        .onClick(Unit) {}
-
+//        .onClick {}
     ) {
         Canvas(modifier = Modifier.fillMaxSize()
             .onGloballyPositioned { layoutCoordinates ->
@@ -126,14 +234,10 @@ fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: Pl
             .drawWithContent {
                 drawContent()
                 if (drawNewData) {
-//                print("Plot: ${plot.id} - ")
                     val plotTraces = plot.traces.map { index -> traces[index] }
                     plotTraces.fastForEachIndexed { _, trace ->
                         if (trace.isVisible) {
-                            val values = /*trace.getWindow { plottingMode == PlottingMode.SCROLLING } */
-                                if (plottingMode == PlottingMode.FRAMES) trace.getFramesWindow() else trace.getPlotWindow()
                             val path = trace.generatePath(plot, size, plottingMode, 75)
-//                            val path = values.map { it.first }.generatePath(plot, size, 75) //generatePath(values.map { it.first }, plot.y.min, plot.y.max, size, padding = style.padding.toInt())
                             drawPath(path, trace.color, style = Stroke(2.dp.toPx()))
                             view.pointsDrawn += trace.size
                         }
@@ -146,13 +250,38 @@ fun Plot(plot: Plot, traces: List<Trace>, drawNewData: Boolean, plottingMode: Pl
         }
         if (view.drawMarkers) {
             view.markers.fastForEach { marker ->
-                val offset: Offset = plot.toOffset(marker.index.toFloat(), marker.value, size, style.padding.toInt())
-                Canvas(modifier = Modifier) {
-                    drawMarker(offset, view.traceColors[marker.trace], 50f, 50f)
+                Canvas(modifier = Modifier
+                    .drawWithContent {
+                        view.redrawTrigger++
+                        view.setMarkerOffset(marker.id, plot.toOffset(marker.index.toFloat(), marker.value, size, style.padding.toInt()))
+                        if (marker.id == view.selectedMarkerID) {
+                            val y = marker.offset.y - 50f - 15f
+                            drawRect(selected, Offset(marker.offset.x, y), Size(50f, 10f))
+                        }
+                        drawMarker(marker.offset, view.traceColors[marker.trace], 50f, 50f)
+                    }
+                    .graphicsLayer {
+//                        updateTransition(view.redrawTrigger)
+                        shadowElevation = 0.5f
+                    }
+                ) {
+                    //drawMarker(marker.offset, view.traceColors[marker.trace], 50f, 50f)
                 }
             }
         }
     }
+}
+
+fun DrawScope.drawMarker(marker: Marker, point: Offset, color: Color, width: Float = 30f, height: Float = 30f, style: DrawStyle = Fill) {
+    val smw = width / 10f
+    val smh = height / 10f
+    val path = Path().apply {
+        moveTo(point.x, point.y)
+        lineTo(point.x - width / 2 + smw, point.y - height + smh * 2)
+        lineTo(point.x + width / 2 - smw, point.y - height + smh * 2)
+        close()
+    }
+    drawPath(path = path, color = color, style = style)
 }
 
 //if (view.drawMarkers) {

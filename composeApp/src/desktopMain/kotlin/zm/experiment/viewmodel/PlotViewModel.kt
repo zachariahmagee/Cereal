@@ -211,6 +211,7 @@ class PlotViewModel() : ViewModel() {
 
     fun setMarkerOffset(id: Int, offset: Offset) {
         _markers[id].offset = offset
+        redrawTrigger++
     }
 
     fun moveMarkerForward(markerID: Int, peakSearch: Boolean = true) {
