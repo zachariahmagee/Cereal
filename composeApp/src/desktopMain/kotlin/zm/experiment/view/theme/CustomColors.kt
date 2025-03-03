@@ -4,6 +4,79 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+//button: TextStyle = DefaultTextStyle.copy(
+//fontWeight = FontWeight.Medium,
+//fontSize = 14.sp,
+//lineHeight = 16.sp,
+//letterSpacing = 1.25.sp
+//),
+
+class CustomTypography(
+   val b1: TextStyle = TextStyle(
+       fontWeight = FontWeight.Medium,
+       fontSize = 14.sp,
+       lineHeight = 16.sp,
+       letterSpacing = 1.sp
+   ),
+   val b2: TextStyle = TextStyle(
+       fontWeight = FontWeight.Medium,
+       fontSize = 13.sp,
+       lineHeight = 14.sp,
+       letterSpacing = 1.sp
+   ),
+   val b3: TextStyle = TextStyle(
+       fontWeight = FontWeight.Medium,
+       fontSize = 12.sp,
+       lineHeight = 14.sp,
+       letterSpacing = 1.sp
+   ),
+   val b4: TextStyle = TextStyle(
+       fontWeight = FontWeight.Medium,
+       fontSize = 10.sp,
+       lineHeight = 12.sp,
+       letterSpacing = 1.sp
+   ),
+   val b5: TextStyle = TextStyle(
+       fontWeight = FontWeight.Medium,
+       fontSize = 8.sp,
+       lineHeight = 10.sp,
+       letterSpacing = 75.sp
+   ),
+   val h1: TextStyle = TextStyle(
+       fontWeight = FontWeight.Bold,
+       fontSize = 16.sp,
+       lineHeight = 18.sp,
+       letterSpacing = 1.75.sp
+   ),
+   val h2: TextStyle = TextStyle(
+       fontWeight = FontWeight.SemiBold,
+       fontSize = 14.sp,
+       lineHeight = 16.sp,
+       letterSpacing = 1.5.sp
+   ),
+   val h3: TextStyle = TextStyle(
+       fontWeight = FontWeight.SemiBold,
+       fontSize = 12.sp,
+       lineHeight = 14.sp,
+       letterSpacing = 1.25.sp
+   ),
+   val h4: TextStyle = TextStyle(
+       fontWeight = FontWeight.SemiBold,
+       fontSize = 11.sp,
+       lineHeight = 12.sp,
+       letterSpacing = 1.1.sp
+   ),
+   val h5: TextStyle = TextStyle(
+       fontWeight = FontWeight.SemiBold,
+       fontSize = 10.sp,
+       lineHeight = 11.sp,
+       letterSpacing = 1.sp
+   ),
+)
 
 
 val Light = lightColors(
@@ -38,6 +111,7 @@ val Dark = darkColors(
 )
 
 internal val LocalCustomColors = staticCompositionLocalOf { CustomColors() }
+internal val LocalCustomTypography = staticCompositionLocalOf { CustomTypography() }
 //internal val LocalLightColors = staticCompositionLocalOf { Light }
 //internal val LocalDarkColors = staticCompositionLocalOf { Dark }
 

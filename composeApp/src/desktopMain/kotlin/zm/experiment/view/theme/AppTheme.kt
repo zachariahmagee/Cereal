@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 fun AppTheme(
     //colors: Colors = Light,
     custom: CustomColors = CustomColors(),
+    customType: CustomTypography = CustomTypography(),
     typography: Typography = MaterialTheme.typography,
     shapes: Shapes = MaterialTheme.shapes,
     darkTheme: Boolean = false,
@@ -21,10 +22,15 @@ fun AppTheme(
     val dark: Colors = Dark
     val colors = if (darkTheme) Dark else Light
     val custom = custom
+    val customType = customType
 
-    CompositionLocalProvider(LocalCustomColors provides custom) {
+    CompositionLocalProvider(LocalCustomColors provides custom, LocalCustomTypography provides customType) {
         MaterialTheme(colors, typography, shapes, content)
     }
+
+//    CompositionLocalProvider(LocalCustomTypography provides customType) {
+//        MaterialTheme(colors, typography, shapes, content)
+//    }
 }
 
 
@@ -37,5 +43,9 @@ object AppTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalCustomColors.current
+    val customType: CustomTypography
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalCustomTypography.current
 }
 

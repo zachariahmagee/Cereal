@@ -49,6 +49,8 @@ class SerialMonitorViewModel() : ViewModel() {
                         serialConnected = false
                         println("SerialMonitorViewModel: Port ${event.port.name} disconnected")
                     }
+
+                    is AppEvent.Alert -> {}
                 }
             }
         }

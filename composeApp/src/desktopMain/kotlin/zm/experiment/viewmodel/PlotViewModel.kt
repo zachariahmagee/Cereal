@@ -2,6 +2,7 @@ package zm.experiment.viewmodel
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import zm.experiment.model.*
 import zm.experiment.model.event.AppEvent
 import zm.experiment.model.event.EventBus
 import zm.experiment.model.serial.commands.CommandProcessor
+import zm.experiment.model.type.AlertType
 import zm.experiment.model.type.AxisType
 import zm.experiment.model.type.PlotType
 import zm.experiment.model.type.SidePanelType
@@ -47,7 +49,7 @@ class PlotViewModel() : ViewModel() {
         private set
 
     var drawMarkers: Boolean by mutableStateOf(false)
-    private val _markers = mutableListOf<Marker>()
+    private val _markers = mutableStateListOf<Marker>()
     val markers get() = _markers
 
     var selectedMarkerID by mutableStateOf(0)
@@ -60,6 +62,10 @@ class PlotViewModel() : ViewModel() {
 
     var plottingMode: PlottingMode by mutableStateOf(PlottingMode.SCROLLING)
         private set
+
+    val frames get() = plottingMode == PlottingMode.FRAMES
+    val scrolling get() = plottingMode == PlottingMode.SCROLLING
+
     var drawNewData: Boolean by mutableStateOf(false)
         private set
 
@@ -76,6 +82,9 @@ class PlotViewModel() : ViewModel() {
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
+                    is AppEvent.Alert -> {
+
+                    }
                     is AppEvent.PanelChanged -> {
                         drawMarkers = (event.panel == SidePanelType.MARKERS)
                         println("drawMarkers: $drawMarkers")
@@ -196,40 +205,71 @@ class PlotViewModel() : ViewModel() {
     }
 
     fun createMarker(traceIndex: Int = 0, peakSearch: Boolean = true) {
+        if (_traces.isEmpty()) {
+            viewModelScope.launch {
+                EventBus.send(AppEvent.Alert(AlertType.TracesAreEmpty, message = "Markers cannot be used without active data"))
+            }
+            return
+        }
         if (_markers.isNotEmpty()) {
             val index = if (peakSearch) _markers.last().index else _markers.last().index + 10 % packetSize
-            val peak = if (peakSearch) _traces[traceIndex].findNextPeak(index) else (index) to _traces[traceIndex][index]!!.first
+            val peak = if (peakSearch) _traces[traceIndex].findNextPeak(index) else (index) to _traces[traceIndex][index, frames]!!
+            _markers.add(Marker(_markers.size, peak.second.first.toFloat(), (peak.second.second ?: peak.first).toFloat(), peak.first, traceIndex))
+            selectedMarkerID = _markers.last().id
         } else {
-            val peak = if (peakSearch) _traces[traceIndex].findNextPeak() else 0 to _traces[traceIndex][0]!!.first
-            _markers.add(Marker(0, peak.second.toFloat(), peak.first, traceIndex))
+            val peak = if (peakSearch) _traces[traceIndex].findNextPeak() else 0 to _traces[traceIndex][0, frames]!!
+            _markers.add(Marker(0, peak.second.first.toFloat(), (peak.second.second ?: peak.first).toFloat(), peak.first, traceIndex))
+            selectedMarkerID = _markers.last().id
         }
     }
 
     fun removeMarker(markerID: Int = _markers.size - 1) {
+        if (markerID < 0 || markerID > _markers.size) return
         _markers.removeAt(markerID)
     }
 
-    fun setMarkerOffset(id: Int, offset: Offset) {
+    fun setMarkerOffset(id: Int, offset: Offset, size: Size = Size(50f, 50f)) {
         _markers[id].offset = offset
+        _markers[id].zeroOffset = Offset(offset.x - size.width / 2, offset.y - size.height)
         redrawTrigger++
     }
+
+    fun updateMarkerValue(id: Int) {
+        if (_markers[id].trace < 0 || _markers[id].trace > _traces.size - 1) return
+        val values = _traces[_markers[id].trace][_markers[id].index, frames]!!
+        _markers[id].value = values.first.toFloat()
+        _markers[id].value2 = (values.second ?: _markers[id].trace).toFloat()
+    }
+
+//    fun setMarkerOffset(id: Int, plot: Plot, )
+
+    fun dragMarker(id: Int, amount: Float, plot: Plot, size: Size) {
+        val index = plot.x.mapTo(markers[id].offset.x + amount, 0f + plot.style.padding, size.width).toInt()
+        if (index < 0 || index > packetSize - 1) return
+        _markers[id].index = index
+        _markers[id].value = _traces[_markers[id].trace][index, frames]!!.first.toFloat()
+        _markers[id].value2 = (_traces[_markers[id].trace][index, frames]!!.second ?: index).toFloat()
+    }
+
 
     fun moveMarkerForward(markerID: Int, peakSearch: Boolean = true) {
         val index = _markers[markerID].index
         val peak = if (peakSearch) _traces[_markers[markerID].trace].findNextPeak(index) else
-            index + 1 % packetSize to _traces[_markers[markerID].trace][index + 1 % packetSize]!!.first
+            index + 1 % packetSize to _traces[_markers[markerID].trace][index + 1 % packetSize, frames]!!
         println(peak)
         _markers[markerID].index = peak.first
-        _markers[markerID].value = peak.second.toFloat()
+        _markers[markerID].value = peak.second.first.toFloat()
+        _markers[markerID].value2 = (peak.second.second ?: peak.first).toFloat()
     }
 
     fun moveMarkerBackward(markerID: Int, peakSearch: Boolean = true) {
         val index = _markers[markerID].index
-        val peak = if (peakSearch) _traces[_markers[markerID].trace].findNextPeak(index) else
-            index + 1 % packetSize to _traces[_markers[markerID].trace][index + 1 % packetSize]!!.first
+        val peak = if (peakSearch) _traces[_markers[markerID].trace].findPreviousPeak(index) else
+            index - 1 % packetSize to _traces[_markers[markerID].trace][index + 1 % packetSize, frames]!!
 
         _markers[markerID].index = peak.first
-        _markers[markerID].value = peak.second.toFloat()
+        _markers[markerID].value = peak.second.first.toFloat()
+        _markers[markerID].value2 = (peak.second.second ?: peak.first).toFloat()
     }
 
 

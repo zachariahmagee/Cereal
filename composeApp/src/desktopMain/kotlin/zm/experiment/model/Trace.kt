@@ -26,6 +26,10 @@ class Trace(
     var max: Double = 0.0
     var min: Double = 0.0
 
+    var mid: Double =
+        (min + max) / 2
+
+
     val size: Int
         get() = if (head == -1) 0 else (head - tail + capacity) % capacity + 1//(head - tail + 1).coerceAtMost(capacity)
 
@@ -43,17 +47,16 @@ class Trace(
         }
     }
 
-    operator fun get(index: Int): Pair<Double, Double?>? {
+    operator fun get(index: Int, frames: Boolean = false): Pair<Double, Double?>? {
         if (index < 0 || index >= size) return null
         //val realIndex = (tail + index) % capacity
-        var realIndex = (head - windowSize + index)
+        var realIndex = ((if (frames) endOfLastPacket else head) - windowSize + index)
         if (realIndex < 0) realIndex += capacity
         return values1[realIndex % capacity] to values2[realIndex % capacity] // to values2[realIndex] == null
     }
 
     private fun countValues() {
-        count++
-        if (count > windowSize - 1) { // - 1 ??
+        if (++count > windowSize - 1) { // - 1 ??
             endOfLastPacket = head
             count = 0
         }
@@ -169,7 +172,7 @@ class Trace(
         }
     }
 
-    fun findNextPeak(currentIndex: Int = 0, threshold: Double = -30.0/*(max - min) / 2*/) : Pair<Int, Float> {
+    fun findNextPeak1(currentIndex: Int = 0, threshold: Double = -30.0/*(max - min) / 2*/) : Pair<Int, Float> {
         val window = getFramesWindow()//.map { it.first.toFloat() }
         for (i in currentIndex + 1 until window.size - 1) {
             if (i > 0 && i < window.size - 1 &&
@@ -194,30 +197,58 @@ class Trace(
         return currentIndex to window[currentIndex].first.toFloat()
     }
 
-//    fun findPreviousPeak(currentIndex: Int = 0, threshold: Double = (max - min) / 2) : Pair<Int, Float> {
-//        val window = getFramesWindow()//.map { it.first.toFloat() }
-//        return window[currentIndex]
-//        var i: Int = currentIndex
-//        for (i in i >= 0; i--) {
-//            if (i > 0 && i < window.size - 1 &&
-//                window[i].first > threshold &&
-//                window[i].first >= window[i - 1].first &&
-//                window[i].first > window[i + 1].first) {
-//
-//                return i to window[i].first.toFloat() // Emit the next peak
-//            }
-//        }
-//        for (i in 0 until currentIndex) {
-//            if (i > 0 && i < window.size - 1 &&
-//                window[i].first > threshold &&
-//                window[i].first >= window[i - 1].first &&
-//                window[i].first > window[i + 1].first) {
-//
-//                return i to window[i].first.toFloat() // Emit the next peak
-//            }
-//        }
-//        return currentIndex to window[currentIndex].first.toFloat()
-//    }
+    fun findNextPeak(currentIndex: Int = 0, threshold: Double = -30.0/*(max - min) / 2*/) : Pair<Int, Pair<Double, Double>> {
+        println(mid)
+        val window = getFramesWindow()//.map { it.first.toFloat() }
+        for (i in currentIndex + 1 until window.size - 1) {
+            if (i > 0 && i < window.size - 1 &&
+                window[i].first > threshold &&
+                window[i].first >= window[i - 1].first &&
+                window[i].first > window[i + 1].first) {
+                println("found a peak ${i}, ${window[i].first}")
+                return i to (window[i].first to window[i].second)// Emit the next peak
+            }
+        }
+        println("Didnt find one")
+        for (i in 0 until currentIndex) {
+            if (i > 0 && i < window.size - 1 &&
+                window[i].first > threshold &&
+                window[i].first >= window[i - 1].first &&
+                window[i].first > window[i + 1].first) {
+
+                return i to (window[i].first to window[i].second)// Emit the next peak
+            }
+        }
+        println("Still no")
+        return currentIndex to (window[currentIndex].first to window[currentIndex].second)
+    }
+
+    // TODO: Find last peak
+
+
+
+    fun findPreviousPeak(currentIndex: Int = 0, threshold: Double = -30.0/*= (max - min) / 2*/) : Pair<Int, Pair<Double, Double>> {
+        val window = getFramesWindow()//.map { it.first.toFloat() }
+        for (i in currentIndex - 1 downTo 0) {
+            if (i > 0 && i < window.size - 1 &&
+                window[i].first > threshold &&
+                window[i].first >= window[i - 1].first &&
+                window[i].first > window[i + 1].first) {
+
+                return i to (window[i].first to window[i].second)// Emit the next peak
+            }
+        }
+        for (i in windowSize downTo currentIndex + 1) {
+            if (i > 0 && i < window.size - 1 &&
+                window[i].first > threshold &&
+                window[i].first >= window[i - 1].first &&
+                window[i].first > window[i + 1].first) {
+
+                return i to (window[i].first to window[i].second)// Emit the next peak
+            }
+        }
+        return currentIndex to (window[currentIndex].first to window[currentIndex].second)
+    }
 
 
 

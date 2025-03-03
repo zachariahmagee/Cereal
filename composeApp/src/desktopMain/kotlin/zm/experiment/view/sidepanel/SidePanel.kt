@@ -26,6 +26,8 @@ fun SidePanel(
 //    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
 //    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     onClose: () -> Unit,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     content: @Composable (ColumnScope.() -> Unit),
 ) {
 
@@ -59,8 +61,8 @@ fun SidePanel(
                     )
 
                 },
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = horizontalAlignment,
+            verticalArrangement = verticalArrangement,
         ) {
             Row(
                 modifier = Modifier

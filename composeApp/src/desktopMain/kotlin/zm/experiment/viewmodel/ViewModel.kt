@@ -16,6 +16,7 @@ import zm.experiment.model.event.EventBus
 import zm.experiment.model.serial.Parser
 import zm.experiment.model.serial.Port
 import zm.experiment.model.serial.listeners.MessageListener
+import zm.experiment.model.type.Alert
 import zm.experiment.model.type.AlertType
 import zm.experiment.model.type.SidePanelType
 
@@ -30,8 +31,8 @@ class AppViewModel(
         private set
     var serialConnected by mutableStateOf(false)
         private set
-    var currentAlert by mutableStateOf(AlertType.NONE)
-        private set
+//    var currentAlert by mutableStateOf(AlertType.NONE)
+//        private set
 
     var showSerialMonitor by mutableStateOf<Boolean>(false)
         private set
@@ -41,6 +42,9 @@ class AppViewModel(
 
     private val parser = Parser(plotViewModel)
 
+    var alert: Alert by mutableStateOf(Alert.None)
+        private set
+
     val OperatingSystem = System.getProperty("os.name")
 
     init {
@@ -48,6 +52,11 @@ class AppViewModel(
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 when (event) {
+                    is AppEvent.Alert -> {
+                        setAlert(event.alertType, event.message)
+                        println(event.message)
+
+                    }
                     is AppEvent.PanelChanged -> {
                         when (event.panel) {
                             SidePanelType.NONE -> {}
@@ -98,8 +107,12 @@ class AppViewModel(
 
     fun sidepanelVisible() : Boolean { return currentPanel != SidePanelType.NONE }
 
-    fun setAlert(alert: AlertType) {
-        currentAlert = alert
+    fun setAlert(type: AlertType, message: String = "") {
+        alert = Alert(
+            type,
+            message,
+            alert = type != AlertType.NONE,
+        )
     }
 
     fun selectPort(portName: String, id: Int) {

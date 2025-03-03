@@ -27,6 +27,27 @@ object CommandChars {
 
     const val COMMA = ","
 }
+// TODO: Add long form commands
+object CommandStrings {
+    const val receivedCommand = "[received]" //
+    const val packetSize = "[packet size]" //
+    const val cartesian = "[cartesian]" //
+    const val scatter = "[scatter]"
+    const val frames = "[frames]" //
+    const val scrolling = "[scrolling]" //
+    const val addTraces = "[add traces]"
+    const val units = "[units]" //
+    const val displayModes = "[display mode]" //
+    const val plotLabels = "[plot labels]"
+    const val traceColor = "[trace color]" //
+    const val gridColors = "[grid colors]" //
+    const val traceLabels = "[trace labels]" //
+    const val logScale = "[log]" //
+    const val customGridLine = "[grid line]"
+    const val axis = "[axis]"
+    const val timestamp = "[timestamp]"
+    const val comma = "[comma]"
+}
 
 
 

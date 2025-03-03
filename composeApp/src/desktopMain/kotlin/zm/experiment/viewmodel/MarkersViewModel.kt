@@ -14,8 +14,8 @@ class MarkersViewModel(private val plot: PlotViewModel) : ViewModel() {
 
     val markers get() = plot.markers
     val selectedMarkerID get() = plot.selectedMarkerID;
-    var peakSearch: Boolean by mutableStateOf(false)
-
+    var peakSearch: Boolean by mutableStateOf(true)
+    var redrawTrigger: Int by mutableStateOf(0)
 
     init {
         viewModelScope.launch {
@@ -29,6 +29,7 @@ class MarkersViewModel(private val plot: PlotViewModel) : ViewModel() {
                     is AppEvent.CommandSent -> {}
                     is AppEvent.PortConnected -> {}
                     is AppEvent.PortDisconnected -> {}
+                    is AppEvent.Alert -> {}
                 }
             }
         }
@@ -55,10 +56,10 @@ class MarkersViewModel(private val plot: PlotViewModel) : ViewModel() {
     }
 
     fun moveLeft() {
-        plot.moveMarkerBackward(selectedMarkerID)
+        plot.moveMarkerBackward(selectedMarkerID, peakSearch)
     }
 
     fun moveRight() {
-        plot.moveMarkerForward(selectedMarkerID)
+        plot.moveMarkerForward(selectedMarkerID, peakSearch)
     }
 }

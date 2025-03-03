@@ -82,7 +82,7 @@ fun Sidebar(view: AppViewModel) {
             MarkerIcon(view)// TODO: Markers Icon
             IconSpacer()
             // TODO: CSV Icon
-            IconItem(Icons.Outlined.LaptopMac, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor) })
+//            IconItem(Icons.Outlined.LaptopMac, onClick = { view.serialMonitorVisibility(!view.showSerialMonitor) })
             // TODO: Help Icon
         }
     }
